@@ -779,6 +779,113 @@ data/
 }
 ```
 
+**Step 3.1: Factor Quality Refinement and Diversification**
+
+**Purpose:** Enhance factor quality, diversity, and business relevance through creative manual editing
+
+**Critical Requirement:** Edit factors ONE BY ONE using manual editing tools to avoid pattern creation and ensure maximum realism and diversity.
+
+**Analysis Results from Generated Factors:**
+- **Missing Factor Types:** 3 out of 9 types missing (frequency, reason, similarity)
+- **Operator Over-Reliance:** 62.8% of guardrails use `is_not_null` operator (177 out of 282)
+- **Generic Validations:** 17 factors lack business context with generic "is not empty" patterns
+- **Repetitive Patterns:** Identical factor counts across object types (26 factors each)
+- **Missing Business Context:** Generic questions and validations without industry expertise
+
+**Holistic Factor Design Approach:**
+- **Complete Datapoint Coverage:** For each object type, analyze ALL available datapoints to ensure comprehensive factor coverage
+- **Interconnected Logic:** Create factors that consider relationships between different datapoints (e.g., company size vs. industry, person role vs. department)
+- **Business Context Integration:** Apply industry-specific knowledge across all datapoints to create realistic validation scenarios
+- **Diverse Factor Types:** Distribute factor types (volume, frequency, time, boolean, option, reason, entity, similarity, place) across all datapoints
+- **Operator Variety:** Use different operators for similar datapoints to avoid repetitive patterns
+- **Realistic Scenarios:** Create factors that reflect real-world business decisions and data quality requirements
+
+**Refinement Strategy Per Object Type:**
+
+**Company Factors:**
+- Add legal entity validation, industry compliance, financial standards
+- Convert some to `frequency` (update rates), `reason` (business decisions), `similarity` (competitor analysis)
+- Use operators like `regex` (legal suffixes), `in` (industry lists), `between` (revenue ranges)
+- Examples: "Company's name contains legal entity suffix", "How often does the company update its profile?"
+
+**Person Factors:**
+- Add professional validation, skill assessment, contact verification
+- Convert to `frequency` (activity rates), `reason` (career changes), `similarity` (skill matching)
+- Use operators like `regex` (email/phone), `contains` (skills), `in` (job titles)
+- Examples: "Person's email follows valid format", "Why did the person change their role?"
+
+**Product Factors:**
+- Add e-commerce logic, pricing validation, inventory rules
+- Convert to `frequency` (update rates), `reason` (price changes), `similarity` (competitor products)
+- Use operators like `between` (price ranges), `regex` (SKU format), `greater_than` (minimum values)
+- Examples: "Product's SKU follows standard format", "How similar is this product to competitors?"
+
+**Vehicle Factors:**
+- Add automotive standards, safety regulations, performance metrics
+- Convert to `frequency` (maintenance), `reason` (recalls), `similarity` (model comparison)
+- Use operators like `between` (year ranges), `in` (safety ratings), `regex` (VIN format)
+- Examples: "Vehicle's year is within valid range", "How often does the vehicle require maintenance?"
+
+**Property Factors:**
+- Add real estate market logic, zoning regulations, valuation standards
+- Convert to `frequency` (market updates), `reason` (price changes), `similarity` (comparable properties)
+- Use operators like `between` (price/sqft), `in` (property types), `greater_than` (minimum values)
+- Examples: "Property's price per square foot is realistic for area", "Why did the property price change?"
+
+**Document Factors:**
+- Add document management, compliance checks, version control
+- Convert to `frequency` (revisions), `reason` (updates), `similarity` (document types)
+- Use operators like `regex` (file formats), `between` (file sizes), `in` (document types)
+- Examples: "Document's file type is supported", "How often is this document updated?"
+
+**Jobpost Factors:**
+- Add HR industry standards, salary validation, skill matching
+- Convert to `frequency` (posting rates), `reason` (hiring needs), `similarity` (job matching)
+- Use operators like `between` (salary ranges), `in` (job levels), `contains` (required skills)
+- Examples: "Job's salary is within market range", "Why was this job posted?"
+
+**Event Factors:**
+- Add event management logic, capacity planning, scheduling validation
+- Convert to `frequency` (event frequency), `reason` (cancellations), `similarity` (event types)
+- Use operators like `between` (attendee counts), `in` (event categories), `greater_than` (minimum capacity)
+- Examples: "Event's capacity is realistic for venue", "How often does this event occur?"
+
+**Agent Factors:**
+- Add AI/ML context, performance metrics, capability validation
+- Convert to `frequency` (training frequency), `reason` (model updates), `similarity` (agent comparison)
+- Use operators like `between` (accuracy ranges), `in` (capability types), `greater_than` (performance thresholds)
+- Examples: "Agent's accuracy is above minimum threshold", "Why was the agent model updated?"
+
+**Dealer Factors:**
+- Add automotive dealer standards, inventory management, customer service
+- Convert to `frequency` (inventory turnover), `reason` (sales changes), `similarity` (dealer comparison)
+- Use operators like `between` (inventory levels), `in` (dealer types), `greater_than` (customer satisfaction)
+- Examples: "Dealer's inventory turnover is within industry standards", "How similar is this dealer to competitors?"
+
+**Organization Factors:**
+- Add corporate governance, compliance standards, financial validation
+- Convert to `frequency` (reporting frequency), `reason` (policy changes), `similarity` (organization comparison)
+- Use operators like `between` (employee counts), `in` (organization types), `regex` (compliance codes)
+- Examples: "Organization's employee count is realistic for industry", "Why did the organization change its structure?"
+
+**Implementation Approach:**
+1. **Manual Editing Only:** Use edit tools to modify factors one by one
+2. **No Scripts:** Avoid automated pattern generation to prevent repetitive patterns
+3. **Holistic Object Type Analysis:** Consider ALL datapoints for each object type to create diverse, realistic, and comprehensive factor coverage
+4. **Creative Design:** Apply domain expertise and industry knowledge to each factor
+5. **Diverse Operators:** Use all 19 operators with business-specific logic
+6. **Realistic Values:** Apply industry standards, regulatory requirements, and business rules
+7. **Natural Language:** Ensure factor names sound natural and business-relevant
+8. **Cross-Datapoint Relationships:** Create factors that consider relationships between different datapoints within the same object type
+
+**Quality Targets:**
+- All 9 factor types represented with balanced distribution
+- All 19 operators used with realistic business logic
+- Zero generic "is not empty" validations
+- Unique, creative factors per object type
+- Business-relevant use cases and guardrails
+- Industry-specific validation rules and standards
+
 **Step 4: Create targets.json (List View)**
 
 **Purpose:** Generate targets data based on actual database table structure
@@ -990,25 +1097,134 @@ data/
 - **Relationship Datapoints:** Fields linking to other objects (company_id, category_id)
 - **Industry-Specific Datapoints:** Specialized fields for each domain
 
-### Phase 3: Activity Data Generation
+### Phase 3: Activity & Workflow Data Generation (Combined)
 
-**Purpose:** Generate comprehensive activity detail JSONs and activity list view based on database schema and source relationships
+**Purpose:** Generate comprehensive activity detail JSONs, workflow JSONs, and their respective list views based on workflow requirements and real data sources
 
-**Compatibility Requirement:** This phase must learn from Phase 1 generated source files and Phase 2 generated object types, datapoints, and factors to ensure activities reference correct IDs and maintain data consistency across all generated files.
+**Compatibility Requirement:** This phase must learn from Phase 1 generated source files and Phase 2 generated object types, datapoints, and factors to ensure activities and workflows reference correct IDs and maintain data consistency across all generated files.
 
 **Target Folder Structure:**
 ```
-data/activities/
-├── activities.json                # Overview list file for activities page
-├── company-enrichment.json        # Individual activity detail
-├── lead-extraction.json           # Individual activity detail
-├── prospect-sourcing.json         # Individual activity detail
-├── sales-forecasting-training.json # Individual activity detail
-├── revenue-prediction.json        # Individual activity detail
-└── ... (other activities)
+data/
+├── activities/                    # Activity detail files
+│   ├── activities.json            # Overview list file for activities page
+│   ├── company-enrichment.json    # Individual activity detail
+│   ├── lead-extraction.json       # Individual activity detail
+│   └── ... (other activities)
+│
+├── workflows/                     # Workflow detail files
+│   ├── workflows.json             # Overview list file for workflows page
+│   ├── lead-generation-pipeline.json # Individual workflow detail
+│   ├── data-processing-pipeline.json # Individual workflow detail
+│   └── ... (other workflows)
 ```
 
-**Step 1: Create Individual activity-detail.json Files (Detail View)**
+**Step 1: Define Workflow Patterns by Object Type Combinations**
+
+**Purpose:** Create diverse workflow patterns that reflect different business scenarios and data processing approaches
+
+**Learning Requirement:** Analyze Phase 1 generated source files and Phase 2 generated object types/datapoints/factors to ensure workflows reference correct IDs and maintain data consistency.
+
+**Available Sources:**
+1. **LinkedIn People Dataset** - Professional profiles (person data)
+2. **Real Estate API** - Property listings (property data) 
+3. **AI Company Researcher** - Company data enrichment (company data)
+4. **ESG Agent** - Document analysis (document data)
+5. **Job Market Scraper** - Job postings (jobpost data)
+6. **E-commerce Scraper** - Product data (product data)
+7. **Event Management System** - Event data (event data)
+8. **Automotive Database** - Vehicle data (vehicle data)
+
+**Workflow Patterns Based on Real Data:**
+
+#### **Workflow 1: E-commerce Product Discovery & Recommendation**
+**Pattern:** **Discovery → Enrichment → Recommendation**
+**Object Types:** Product → Category → Review
+**Business Logic:** Find products → Enrich with datapoints (category, rating, reviews_count) → Generate recommendations
+**Activities:**
+- **Source Products** (find products by category/price datapoints)
+- **Enrich Products** (add category, rating, reviews_count datapoints)
+- **Extract Categories** (extract category data from products)
+- **Predict Recommendations** (predict product recommendations based on enriched data)
+
+#### **Workflow 2: Real Estate Market Analysis**
+**Pattern:** **Data Collection → Enrichment → Market Prediction**
+**Object Types:** Property → Agent → Market Data
+**Business Logic:** Collect properties → Enrich with agent data → Predict market trends
+**Activities:**
+- **Source Properties** (find properties by location/price datapoints)
+- **Enrich Properties** (add agent, market data datapoints)
+- **Extract Market Data** (extract market trends from properties)
+- **Train Market Model** (train prediction model on market data)
+- **Predict Market Trends** (predict future market conditions)
+
+#### **Workflow 3: Professional Network Building**
+**Pattern:** **Profile Sourcing → Enrichment → Network Analysis**
+**Object Types:** Person → Company → Network
+**Business Logic:** Find professionals → Enrich with company data → Analyze network connections
+**Activities:**
+- **Source People** (find professionals by role/skills datapoints)
+- **Enrich People** (add company, experience datapoints)
+- **Extract Network Data** (extract connection patterns)
+- **Train Network Model** (train network analysis model)
+- **Predict Connections** (predict potential connections)
+
+#### **Workflow 4: Job Market Intelligence**
+**Pattern:** **Job Collection → Skill Analysis → Demand Prediction**
+**Object Types:** Jobpost → Skills → Market Trends
+**Business Logic:** Collect job postings → Analyze skill requirements → Predict demand
+**Activities:**
+- **Source Jobs** (find jobs by location/role datapoints)
+- **Enrich Jobs** (add skills, requirements datapoints)
+- **Extract Skill Data** (extract skill patterns from jobs)
+- **Train Demand Model** (train demand prediction model)
+- **Predict Job Demand** (predict future job market trends)
+
+#### **Workflow 5: Document Intelligence & Classification**
+**Pattern:** **Document Collection → Analysis → Classification**
+**Object Types:** Document → Content → Categories
+**Business Logic:** Collect documents → Analyze content → Classify by type
+**Activities:**
+- **Source Documents** (find documents by type/date datapoints)
+- **Enrich Documents** (add content, metadata datapoints)
+- **Extract Content Data** (extract key content features)
+- **Train Classification Model** (train document classification model)
+- **Predict Document Types** (predict document categories)
+
+#### **Workflow 6: Event Management & Analytics**
+**Pattern:** **Event Collection → Enrichment → Attendance Prediction**
+**Object Types:** Event → Attendee → Analytics
+**Business Logic:** Collect events → Enrich with attendee data → Predict attendance
+**Activities:**
+- **Source Events** (find events by date/location datapoints)
+- **Enrich Events** (add attendee, capacity datapoints)
+- **Extract Analytics Data** (extract attendance patterns)
+- **Train Attendance Model** (train attendance prediction model)
+- **Predict Event Success** (predict event attendance and success)
+
+#### **Workflow 7: Automotive Market Analysis**
+**Pattern:** **Vehicle Collection → Market Analysis → Price Prediction**
+**Object Types:** Vehicle → Dealer → Market Data
+**Business Logic:** Collect vehicles → Analyze market data → Predict pricing
+**Activities:**
+- **Source Vehicles** (find vehicles by make/model datapoints)
+- **Enrich Vehicles** (add dealer, market datapoints)
+- **Extract Market Data** (extract pricing trends)
+- **Train Price Model** (train price prediction model)
+- **Predict Vehicle Prices** (predict vehicle market values)
+
+#### **Workflow 8: Company Intelligence & Research**
+**Pattern:** **Company Discovery → Enrichment → Competitive Analysis**
+**Object Types:** Company → Industry → Competitors
+**Business Logic:** Find companies → Enrich with industry data → Analyze competition
+**Activities:**
+- **Source Companies** (find companies by industry/size datapoints)
+- **Enrich Companies** (add industry, financial datapoints)
+- **Extract Industry Data** (extract competitive intelligence)
+- **Train Analysis Model** (train competitive analysis model)
+- **Predict Market Position** (predict company market position)
+
+**Step 2: Create Individual activity-detail.json Files (Detail View)**
 
 **Purpose:** Populate activity detail pages with full configuration and metadata
 
@@ -1020,6 +1236,7 @@ data/activities/
 - **Predict Activities:** Must have `source` → `target` relationship (determines source and datapoint for predictions)
 - **Enrich Activities:** Must have `source` → `factor` relationship (enriches existing objects with more data and applies filtering)
 - **Source Activities:** Must have `factor` → `source` relationship (finds objects based on factor criteria)
+- **Finetune Activities:** Must have `source` → `factor` relationship (fine-tunes existing models with new data)
 
 **Target Structure:**
 ```json
@@ -1027,7 +1244,7 @@ data/activities/
   "id": "uuid",
   "name": "Activity Name",
   "description": "Detailed activity description",
-  "type": "enrich|extract|source|train|finetune",
+  "type": "enrich|extract|source|train|predict|finetune",
     "object_type": "company|person|product|vehicle|document|event|jobpost|property|organization|contact|transaction|article|report|task|project|message|meeting|regulation|market|competitor|user|metric|review",
   "status": "active|inactive|deleted",
   "verification_status": true|false,
@@ -1184,7 +1401,7 @@ Based on analysis of the database structure, here's the strategic plan to popula
       "id": "uuid",
       "name": "Activity Name",
       "description": "Activity description",
-      "type": "enrich|extract|source|train|finetune",
+      "type": "enrich|extract|source|train|predict|finetune",
       "object_type": "company|person|product|vehicle|document|event|jobpost|property|organization|transaction|article|report|task|project|message|meeting|user|metric|review",
       "status": "active|inactive|deleted",
       "verification_status": true|false,
@@ -1221,7 +1438,7 @@ Based on analysis of the database structure, here's the strategic plan to popula
     - id: string, must match UUID v4 regex pattern
     - name: string, length between 1-100 characters
     - description: string, length between 0-500 characters
-    - type: string, must be one of: "enrich", "extract", "source", "train", "finetune"
+    - type: string, must be one of: "enrich", "extract", "source", "train", "predict", "finetune"
     - object_type: string, must be one of: "company", "person", "product", "vehicle", "document", "event", "jobpost", "property", "organization", "transaction", "article", "report", "task", "project", "message", "meeting", "user", "metric", "review"
     - status: string, must be one of: "active", "inactive", "deleted"
     - verification_status: boolean
@@ -1307,27 +1524,11 @@ Based on analysis of the database structure, here's the strategic plan to popula
 
 **Step 4.3: Activity Documentation and Examples**
    - Document activity setup patterns and their usage
-   - Provide usage examples for each activity type (enrich, extract, source, train, finetune)
+   - Provide usage examples for each activity type (enrich, extract, source, train, predict, finetune)
    - Create troubleshooting guide for common activity validation errors
    - Document edge case handling and error recovery strategies for activities
 
-### Phase 4: Workflow Data Generation
-
-**Purpose:** Generate comprehensive workflow detail JSONs and workflow list view based on database schema and activity relationships
-
-**Compatibility Requirement:** This phase must learn from all previously generated files (Phase 1 sources, Phase 2 object types/datapoints/factors/targets, Phase 3 activities) to ensure workflows reference correct activity IDs and maintain complete data consistency across the entire system.
-
-**Target Folder Structure:**
-```
-data/workflows/
-├── workflows.json                  # Overview list file for workflows page
-├── lead-generation-pipeline.json   # Individual workflow detail
-├── data-processing-pipeline.json   # Individual workflow detail
-├── ml-training-pipeline.json       # Individual workflow detail
-└── ... (other workflows)
-```
-
-**Step 1: Create Individual workflow-detail.json Files (Detail View)**
+**Step 3: Create Individual workflow-detail.json Files (Detail View)**
 
 **Purpose:** Populate workflow detail pages with full configuration and execution metadata
 
@@ -1346,7 +1547,7 @@ data/workflows/
 - Runtime statistics (total_executions, successful_executions, failed_executions, success_rate, average_duration, last_used_at)
 - Metadata (owner_org_id, owner_org_name, created_at, updated_at, activities_count, phases_count, workflow_requests_count)
 
-**Step 2: Workflow-Detail.json Generation Strategy**
+**Step 4: Workflow-Detail.json Generation Strategy**
 
 **Learning Requirement:** Reference all previously generated files to ensure workflow generation strategy creates realistic workflows that properly chain activities and maintain data flow consistency.
 
@@ -1386,7 +1587,7 @@ data/workflows/
 - **Inconsistent Data:** Mathematical inconsistencies
 - **Missing Data:** Null timestamps, incomplete statistics
 
-**Step 3: Generate workflows.json (List View)**
+**Step 5: Generate workflows.json (List View)**
 
 **Purpose:** Create workflows list view by extracting data from individual workflow-detail.json files
 
@@ -1404,7 +1605,7 @@ data/workflows/
 - Timestamps (created_at, updated_at, last_used_at)
 - Runtime statistics (total_executions, successful_executions, failed_executions, success_rate, activities_count, phases_count, average_duration)
 
-**Step 4: Workflow Validation Utilities**
+**Step 6: Workflow Validation Utilities**
 
 **Purpose:** Create validation functions for workflow-specific concerns only
 
@@ -1473,11 +1674,13 @@ data/workflows/
 - If total_executions > 0, then success_rate calculation is accurate
 - Activities_count and phases_count match actual setup structure
 
-### Phase 5: Source API Simulation & Data Generation
+### Phase 4: Source API Simulation & Data Generation
 
-**Purpose:** Create localhost API simulators that generate realistic random data matching the source schemas to test complete data pipelines
+**Purpose:** Create localhost API simulators that generate realistic random data matching the source schemas to test complete data pipelines with comprehensive logging for cross-checking with backend ETL processing
 
-**Compatibility Requirement:** This phase must learn from all previously generated files (Phase 1 sources, Phase 2 object types/datapoints/factors/targets, Phase 3 activities, Phase 4 workflows) to ensure simulators generate data that matches the expected schemas and maintains complete data consistency across the entire system.
+**Compatibility Requirement:** This phase must learn from all previously generated files (Phase 1 sources, Phase 2 object types/datapoints/factors/targets, Phase 3 activities and workflows) to ensure simulators generate data that matches the expected schemas and maintains complete data consistency across the entire system.
+
+**Logging Requirement:** Each simulator must generate comprehensive statistics and logs that can be cross-checked with backend ETL logging to verify data integrity, performance metrics, and system reliability.
 
 **Target Structure:**
 ```
@@ -1490,131 +1693,1061 @@ data/simulators/
 ├── event-management-api/          # Event Management simulator
 ├── job-market-scraper-api/        # Job Market Scraper simulator
 ├── real-estate-api/              # Real Estate API simulator
-└── shared/                        # Common utilities
+├── ml-model-trainer-api/          # ML Model Trainer simulator
+├── ml-model-inference-api/        # ML Model Inference simulator
+├── fireworks-finetune-api/        # Fireworks Fine-tuning simulator
+└── shared/                        # Common utilities and logging
 ```
 
-**Step 1: API Endpoint Simulation**
+## Step 1: Source Configuration Updates
 
-**Purpose:** Create realistic API endpoints that match the source template patterns
+**Purpose:** Update existing source JSONs and add new sources to support comprehensive testing patterns
 
-**API Endpoint Structure:**
-Each simulator exposes three main endpoints that match the real source API patterns:
+**Source Pattern Analysis:**
 
-**Run Request Endpoint:** Accepts run setup parameters including filters, criteria, maximum objects to fetch, and webhook URL. Returns a unique run ID and estimated completion time. Simulates the initial request to start data processing.
+**Webhook-Based Sources (No Status Check/Delivery Endpoints):**
+- Real Estate API - Uses webhook delivery
+- E-commerce Scraper - Uses webhook delivery  
+- AI Company Researcher - Uses webhook delivery
+- ML Model Inference - Uses webhook delivery
 
-**Status Check Endpoint:** Takes a run ID and returns the current execution status (waiting, in_progress, ready, failed). Includes progress percentage, creation timestamp, and completion timestamp. Simulates checking the progress of a running job.
+**Endpoint-Based Sources (Have Status Check/Delivery Endpoints):**
+- LinkedIn People Dataset - Full endpoint support
+- ESG Agent - Endpoint support
+- Job Market Scraper - Endpoint support
+- Event Management System - Endpoint support
+- Automotive Database - Endpoint support
+- ML Model Trainer - Full endpoint support
+- Fireworks Fine-tuning - Full endpoint support
 
-**Delivery Endpoint:** Takes a run ID and returns the generated data when status is ready. Includes total record count, generation timestamp, and the actual data payload. Simulates downloading the final results.
+**Request Structure Patterns:**
 
-**Health Check Endpoint:** Simple endpoint that returns service availability status for monitoring purposes.
+**Webhook Sources (Everything in Parent Level):**
+- Real Estate API: `body.filters` (parent) vs `body.request_id` (parent)
+- E-commerce Scraper: `body.filters` (parent) vs `body.request_id` (parent)
+- AI Company Researcher: `body.query` (parent) vs `body.run_id` (parent)
+- ML Model Inference: `body.inference_data` (parent) vs `body.run_id` (parent)
 
-**Step 2: Data Generation Patterns**
+**Endpoint Sources (Mixed Patterns):**
+- LinkedIn People Dataset: `body.filter.filters` (nested) vs `body.run_id` (parent)
+- ESG Agent: `body.document_id` (parent) vs `body.run_id` (parent)
+- Job Market Scraper: `body.search_params` (parent) vs `body.job_id` (parent)
+- Event Management System: `body.event_query` (parent) vs `body.run_id` (parent)
+- Automotive Database: `body.sql_query` (parent) vs `body.run_id` (parent)
+- ML Model Trainer: `body.tags.training_data` (nested) vs `body.run_id` (parent)
+- Fireworks Fine-tuning: `body.training_data` (parent) vs `body.job_id` (parent)
 
-**Purpose:** Generate realistic data that matches the source schemas and object types
+**Status Translation Patterns:**
+
+**Same Translations for Status Check and Delivery:**
+- LinkedIn People Dataset, Real Estate API, E-commerce Scraper, AI Company Researcher, Event Management System, Automotive Database, ML Model Inference
+
+**Different Translations for Status Check vs Delivery:**
+- ESG Agent: `analyzing` vs `processed`
+- Job Market Scraper: `scraping` vs `completed`
+- ML Model Trainer: `training` vs `ready`
+- Fireworks Fine-tuning: `training` vs `ready`
+
+**Required Source Updates:**
+
+**1. Update AI Company Researcher (Convert to Webhook):**
+```json
+{
+  "templates": {
+    "run_request_template": "{\"url\": \"https://ai-researcher.internal/api/analyze\", \"method\": \"POST\", \"headers\": {\"Content-Type\": \"application/json\"}, \"body\": {\"query\": \"<<$run_setup>>\", \"webhook_url\": \"<<$webhook_url>>\", \"run_id\": \"<<$id>>\"}}",
+    "status_request_template": "{}",
+    "delivery_request_template": "{}"
+  },
+  "setup": {
+    "run_request_template": {
+      "request": {
+        "run_setup": ["body", "query"],
+        "webhook_url": ["webhook_url"],
+        "run_id": ["run_id"]
+      },
+      "response": {
+        "status": ["status"],
+        "status_translations": {
+          "invalid": "invalid",
+          "waiting": "waiting",
+          "in_progress": "processing",
+          "ready": "ready",
+          "done": "completed",
+          "failed": "failed",
+          "timedout": "timeout"
+        }
+      }
+    },
+    "status_request_template": {},
+    "delivery_request_template": {}
+  }
+}
+```
+
+**2. Add ML Model Trainer Source:**
+```json
+{
+  "id": "ml-model-trainer",
+  "name": "ML Model Trainer",
+  "description": "MLflow-based model training service for machine learning model development",
+  "source_type": "ML Platform",
+  "delivery_type": "Endpoint",
+  "configuration": {
+    "max_concurrent_runs": 3,
+    "timeout": 1800,
+    "max_retries": 1,
+    "auth_key": "mlflow_api_key"
+  },
+  "templates": {
+    "run_request_template": "{\"url\": \"https://mlflow.internal/api/2.0/mlflow/runs/create\", \"method\": \"POST\", \"headers\": {\"Content-Type\": \"application/json\", \"Authorization\": \"Bearer <<$auth_key>>\"}, \"body\": {\"experiment_id\": \"<<$experiment_id>>\", \"run_name\": \"<<$run_name>>\", \"tags\": {\"training_data\": \"<<$run_setup>>\"}, \"webhook_url\": \"<<$webhook_url>>\", \"run_id\": \"<<$id>>\"}}",
+    "status_request_template": "{\"url\": \"https://mlflow.internal/api/2.0/mlflow/runs/get\", \"method\": \"GET\", \"headers\": {\"Authorization\": \"Bearer <<$auth_key>>\"}, \"body\": {\"run_id\": \"<<$run_external_id>>\"}}",
+    "delivery_request_template": "{\"url\": \"https://mlflow.internal/api/2.0/mlflow/artifacts/download\", \"method\": \"GET\", \"headers\": {\"Authorization\": \"Bearer <<$auth_key>>\"}, \"body\": {\"run_id\": \"<<$run_external_id>>\", \"path\": \"model\"}}"
+  },
+  "setup": {
+    "run_request_template": {
+      "request": {
+        "run_setup": ["body", "tags", "training_data"],
+        "webhook_url": ["webhook_url"],
+        "run_id": ["run_id"]
+      },
+      "response": {
+        "status": ["status"],
+        "status_translations": {
+          "invalid": "invalid",
+          "waiting": "waiting",
+          "in_progress": "training",
+          "ready": "ready",
+          "done": "completed",
+          "failed": "failed",
+          "timedout": "timeout"
+        }
+      }
+    },
+    "status_request_template": {
+      "request": {
+        "run_external_id": ["body", "run_id"]
+      },
+      "response": {
+        "status": ["status"],
+        "status_translations": {
+          "invalid": "invalid",
+          "waiting": "waiting",
+          "in_progress": "training",
+          "ready": "ready",
+          "done": "completed",
+          "failed": "failed",
+          "timedout": "timeout"
+        }
+      }
+    },
+    "delivery_request_template": {
+      "request": {
+        "run_external_id": ["body", "run_id"]
+      },
+      "response": {
+        "status": ["status"],
+        "status_translations": {
+          "invalid": "invalid",
+          "waiting": "waiting",
+          "in_progress": "training",
+          "ready": "ready",
+          "done": "completed",
+          "failed": "failed",
+          "timedout": "timeout"
+        }
+      }
+    }
+  }
+}
+```
+
+**3. Add ML Model Inference Source (Webhook-based):**
+```json
+{
+  "id": "ml-model-inference",
+  "name": "ML Model Inference",
+  "description": "MLflow-based model inference service for predictions",
+  "source_type": "ML Platform",
+  "delivery_type": "Webhook",
+  "configuration": {
+    "max_concurrent_runs": 10,
+    "timeout": 300,
+    "max_retries": 2,
+    "auth_key": "mlflow_api_key"
+  },
+  "templates": {
+    "run_request_template": "{\"url\": \"https://mlflow.internal/api/2.0/mlflow/runs/create\", \"method\": \"POST\", \"headers\": {\"Content-Type\": \"application/json\", \"Authorization\": \"Bearer <<$auth_key>>\"}, \"body\": {\"experiment_id\": \"<<$experiment_id>>\", \"run_name\": \"<<$run_name>>\", \"tags\": {\"inference_data\": \"<<$run_setup>>\"}, \"webhook_url\": \"<<$webhook_url>>\", \"run_id\": \"<<$id>>\"}}",
+    "status_request_template": "{}",
+    "delivery_request_template": "{}"
+  },
+  "setup": {
+    "run_request_template": {
+      "request": {
+        "run_setup": ["body", "tags", "inference_data"],
+        "webhook_url": ["webhook_url"],
+        "run_id": ["run_id"]
+      },
+      "response": {
+        "status": ["status"],
+        "status_translations": {
+          "invalid": "invalid",
+          "waiting": "waiting",
+          "in_progress": "inferencing",
+          "ready": "ready",
+          "done": "completed",
+          "failed": "failed",
+          "timedout": "timeout"
+        }
+      }
+    },
+    "status_request_template": {},
+    "delivery_request_template": {}
+  }
+}
+```
+
+**4. Add Fireworks Fine-tuning Source:**
+```json
+{
+  "id": "fireworks-finetune",
+  "name": "Fireworks Fine-tuning",
+  "description": "Fireworks.ai-based fine-tuning service for LLM models",
+  "source_type": "LLM Platform",
+  "delivery_type": "Endpoint",
+  "configuration": {
+    "max_concurrent_runs": 2,
+    "timeout": 3600,
+    "max_retries": 1,
+    "auth_key": "fireworks_api_key"
+  },
+  "templates": {
+    "run_request_template": "{\"url\": \"https://api.fireworks.ai/inference/v1/fine_tuning/jobs\", \"method\": \"POST\", \"headers\": {\"Content-Type\": \"application/json\", \"Authorization\": \"Bearer <<$auth_key>>\"}, \"body\": {\"model\": \"<<$base_model>>\", \"training_data\": \"<<$run_setup>>\", \"hyperparameters\": {\"learning_rate\": 0.001, \"batch_size\": 4}, \"webhook_url\": \"<<$webhook_url>>\", \"job_id\": \"<<$id>>\"}}",
+    "status_request_template": "{\"url\": \"https://api.fireworks.ai/inference/v1/fine_tuning/jobs/<<$run_external_id>>\", \"method\": \"GET\", \"headers\": {\"Authorization\": \"Bearer <<$auth_key>>\"}, \"body\": {}}",
+    "delivery_request_template": "{\"url\": \"https://api.fireworks.ai/inference/v1/fine_tuning/jobs/<<$run_external_id>>/model\", \"method\": \"GET\", \"headers\": {\"Authorization\": \"Bearer <<$auth_key>>\"}, \"body\": {}}"
+  },
+  "setup": {
+    "run_request_template": {
+      "request": {
+        "run_setup": ["body", "training_data"],
+        "webhook_url": ["webhook_url"],
+        "run_id": ["job_id"]
+      },
+      "response": {
+        "status": ["status"],
+        "status_translations": {
+          "invalid": "invalid",
+          "waiting": "queued",
+          "in_progress": "training",
+          "ready": "ready",
+          "done": "completed",
+          "failed": "failed",
+          "timedout": "timeout"
+        }
+      }
+    },
+    "status_request_template": {
+      "request": {
+        "run_external_id": ["url"]
+      },
+      "response": {
+        "status": ["status"],
+        "status_translations": {
+          "invalid": "invalid",
+          "waiting": "queued",
+          "in_progress": "training",
+          "ready": "ready",
+          "done": "completed",
+          "failed": "failed",
+          "timedout": "timeout"
+        }
+      }
+    },
+    "delivery_request_template": {
+      "request": {
+        "run_external_id": ["url"]
+      },
+      "response": {
+        "status": ["status"],
+        "status_translations": {
+          "invalid": "invalid",
+          "waiting": "queued",
+          "in_progress": "training",
+          "ready": "ready",
+          "done": "completed",
+          "failed": "failed",
+          "timedout": "timeout"
+        }
+      }
+    }
+  }
+}
+```
+
+**5. Update Existing Sources with Missing Status Translations:**
+- Add complete status translations for ESG Agent, Job Market Scraper, Event Management System, Automotive Database
+- Ensure all sources have proper status_request_template and delivery_request_template configurations
+
+## Step 2: Individual Simulator Specifications
+
+### 1. LinkedIn People Dataset Simulator
+
+**Purpose:** Generate realistic person profiles with professional information matching the LinkedIn People Dataset source schema
+
+**Data Generation Patterns:**
+- **Person Profiles:** Full names, email addresses, job titles, departments, salary ranges, hourly rates for contractors
+- **Professional Data:** Skills arrays, phone numbers, LinkedIn profile URLs, years of experience, education backgrounds, professional specializations
+- **Contact Information:** Email addresses that match person names, phone numbers with appropriate area codes, LinkedIn URLs using person names in usernames
+
+**Object Type Mapping:** `person` object type with datapoints: name, email, role, department, salary, hourly_rate, skills, phone, linkedin, website, experience_years, education, specialization
+
+**Expected Record Counts:** 50-500 people per run, varying by request parameters
+
+### 2. AI Company Researcher Simulator
+
+**Purpose:** Generate company data matching the AI Company Researcher source schema
+
+**Data Generation Patterns:**
+- **Company Information:** Website URLs, company names, industry classifications, employee counts, founding years
+- **Financial Data:** Revenue, funding amounts, currency types with realistic ratios between revenue and employee count
+- **Location Data:** City, state, country with consistent geographic relationships
+- **Technical Data:** Technology stacks with complementary technologies, company status indicators
+
+**Object Type Mapping:** `company` object type with datapoints: name, website, industry, employee_count, founded_year, revenue, funding, currency, city, state, country, technologies, status
+
+**Expected Record Counts:** 20-200 companies per run, varying by industry filters
+
+### 3. Automotive Database Simulator
+
+**Purpose:** Generate vehicle records matching the Automotive Database source schema
+
+**Data Generation Patterns:**
+- **Vehicle Identification:** VIN numbers, make and model combinations, manufacturing years
+- **Vehicle Specifications:** Colors, mileage ranges, condition status, fuel types, transmission types
+- **Pricing Data:** Realistic vehicle pricing based on year, make, model, and condition
+
+**Object Type Mapping:** `vehicle` object type with datapoints: vin, make, model, year, color, mileage, price, condition, fuel_type, transmission
+
+**Expected Record Counts:** 100-1000 vehicles per run, varying by make/model filters
+
+### 4. E-commerce Scraper Simulator
+
+**Purpose:** Generate product catalog data matching the E-commerce Scraper source schema
+
+**Data Generation Patterns:**
+- **Product Information:** SKUs, product titles, descriptions, pricing, categories, brands
+- **Inventory Data:** Availability status, customer ratings, review counts
+- **Product Relationships:** Products belonging to categories with consistent categorization
+
+**Object Type Mapping:** `product` object type with datapoints: sku, title, description, price, category, brand, availability, rating, reviews_count
+
+**Expected Record Counts:** 200-2000 products per run, varying by category filters
+
+### 5. Real Estate API Simulator
+
+**Purpose:** Generate property listings matching the Real Estate API source schema
+
+**Data Generation Patterns:**
+- **Property Information:** Listing IDs, street addresses, city and state information, ZIP codes
+- **Property Specifications:** Bedroom and bathroom counts, square footage, property types
+- **Market Data:** Pricing, listing dates, status information with realistic address patterns
+
+**Object Type Mapping:** `property` object type with datapoints: listing_id, street, city, state, zip_code, price, bedrooms, bathrooms, square_feet, property_type, listing_date, status
+
+**Expected Record Counts:** 50-500 properties per run, varying by location filters
+
+### 6. Job Market Scraper Simulator
+
+**Purpose:** Generate job postings matching the Job Market Scraper source schema
+
+**Data Generation Patterns:**
+- **Job Information:** Titles, company names, locations, salary ranges, employment types
+- **Requirements:** Experience level requirements, required skills arrays, job descriptions
+- **Timing Data:** Posting dates, expiry dates with posting dates before expiry dates
+
+**Object Type Mapping:** `jobpost` object type with datapoints: title, company, location, salary_range, employment_type, experience_level, skills_required, description, posted_date, expiry_date
+
+**Expected Record Counts:** 100-1000 job postings per run, varying by location/industry filters
+
+### 7. ESG Agent Simulator
+
+**Purpose:** Generate document records matching the ESG Agent source schema
+
+**Data Generation Patterns:**
+- **Document Information:** Titles, document types, content snippets, authors, creation dates
+- **File Data:** File sizes, formats, categories with realistic document naming patterns
+- **Content Metadata:** Document categories, content types, author information
+
+**Object Type Mapping:** `document` object type with datapoints: title, type, content, author, created_date, file_size, format, category
+
+**Expected Record Counts:** 30-300 documents per run, varying by category filters
+
+### 8. Event Management Simulator
+
+**Purpose:** Generate event data matching the Event Management source schema
+
+**Data Generation Patterns:**
+- **Event Information:** Event names, dates, locations, descriptions, capacity limits, pricing
+- **Organization Data:** Organizer information, status indicators with realistic event naming patterns
+- **Scheduling:** Event dates in the future for upcoming events, realistic capacity and pricing
+
+**Object Type Mapping:** `event` object type with datapoints: name, date, location, description, capacity, price, organizer, status
+
+**Expected Record Counts:** 25-250 events per run, varying by date range filters
+
+## Step 1: API Endpoint Simulation
+
+**Purpose:** Create realistic API endpoints that exactly match the source template patterns from `@sources/` directory
+
+**Simulator Architecture:** Each simulator must exactly replicate the API interface defined in the source JSONs from `@sources/` directory, including URL patterns, headers, authentication, request/response formats, and status translations.
+
+**Source-Specific API Endpoints:**
 
 **LinkedIn People Dataset Simulator:**
-Generates realistic person profiles with professional information including email addresses, full names, job titles, departments, salary ranges, hourly rates for contractors, skill arrays, phone numbers, LinkedIn profile URLs, years of experience, education backgrounds, and professional specializations. Uses realistic name generators and professional terminology.
-
-**AI Company Researcher Simulator:**
-Generates company data including website URLs, company names, industry classifications, employee counts, founding years, financial information (revenue, funding, currency), location data (city, state, country), technology stacks, and company status. Uses realistic company naming patterns and industry-specific data.
-
-**Automotive Database Simulator:**
-Generates vehicle records with VIN numbers, make and model combinations, manufacturing years, colors, mileage ranges, pricing, condition status, fuel types, and transmission types. Uses realistic automotive terminology and realistic value ranges.
-
-**E-commerce Scraper Simulator:**
-Generates product catalog data including SKUs, product titles, descriptions, pricing, categories, brands, availability status, customer ratings, and review counts. Uses realistic e-commerce product naming and categorization.
+- **Run Request:** `POST https://api.linkedin.com/v2/people/search`
+  - **Headers:** `Content-Type: application/json`, `Authorization: Bearer {auth_key}`
+  - **Body:** `{"filter": {"filters": "{run_setup}"}, "max_objects": "{max_objects}", "webhook_url": "{webhook_url}", "run_id": "{id}"}`
+  - **Response:** `{"status": "waiting", "run_id": "{generated_id}", "estimated_duration": 45}`
+- **Status Check:** `GET https://api.linkedin.com/v2/runs/{run_external_id}/status`
+  - **Headers:** `Authorization: Bearer {auth_key}`
+  - **Response:** `{"status": "in_progress|ready|done|failed|timedout", "progress": 75, "timestamp": "2025-01-20T10:30:00Z"}`
+- **Delivery:** `GET https://api.linkedin.com/v2/runs/{run_external_id}/download`
+  - **Headers:** `Authorization: Bearer {auth_key}`
+  - **Response:** `{"status": "done", "data": [...], "total_records": 150, "generated_at": "2025-01-20T10:35:00Z"}`
 
 **Real Estate API Simulator:**
-Generates property listings with listing IDs, street addresses, city and state information, ZIP codes, pricing, bedroom and bathroom counts, square footage, property types, listing dates, and status information. Uses realistic address patterns and property characteristics.
+- **Run Request:** `POST https://api.realestate.com/v1/properties/search`
+  - **Headers:** `Content-Type: application/json`, `X-API-Key: {auth_key}`
+  - **Body:** `{"filters": "{run_setup}", "max_results": "{max_objects}", "callback_url": "{webhook_url}", "request_id": "{id}"}`
+  - **Response:** `{"status": "waiting", "request_id": "{generated_id}", "estimated_duration": 78}`
+- **Status Check:** `GET https://api.realestate.com/v1/requests/{run_external_id}/status`
+  - **Headers:** `X-API-Key: {auth_key}`
+  - **Response:** `{"status": "in_progress|ready|done|failed|timedout", "progress": 60, "timestamp": "2025-01-20T10:30:00Z"}`
+- **Delivery:** `GET https://api.realestate.com/v1/requests/{run_external_id}/results`
+  - **Headers:** `X-API-Key: {auth_key}`
+  - **Response:** `{"status": "done", "data": [...], "total_records": 89, "generated_at": "2025-01-20T10:32:00Z"}`
 
-**Job Market Scraper Simulator:**
-Generates job postings with titles, company names, locations, salary ranges, employment types, experience level requirements, required skills arrays, job descriptions, posting dates, and expiry dates. Uses realistic job market terminology and requirements.
+**AI Company Researcher Simulator:**
+- **Run Request:** `POST https://ai-researcher.internal/api/analyze`
+  - **Headers:** `Content-Type: application/json`
+  - **Body:** `{"query": "{run_setup}", "webhook_url": "{webhook_url}", "run_id": "{id}"}`
+  - **Response:** `{"status": "waiting", "run_id": "{generated_id}", "estimated_duration": 95}`
+- **Status Check:** `GET /api/status/{run_id}` (internal endpoint)
+  - **Response:** `{"status": "processing|ready|failed", "progress": 85, "timestamp": "2025-01-20T10:30:00Z"}`
+- **Delivery:** `GET /api/delivery/{run_id}` (internal endpoint)
+  - **Response:** `{"status": "ready", "data": [...], "total_records": 25, "generated_at": "2025-01-20T10:32:00Z"}`
 
 **ESG Agent Simulator:**
-Generates document records with titles, document types, content snippets, authors, creation dates, file sizes, formats, and categories. Uses realistic document naming and metadata patterns.
+- **Run Request:** `POST https://esg-agent.internal/api/process`
+  - **Headers:** `Content-Type: application/json`
+  - **Body:** `{"document_id": "{run_setup}"}`
+  - **Response:** `{"status": "queued", "run_id": "{generated_id}", "estimated_duration": 300}`
+- **Status Check:** `GET /api/status/{run_id}` (internal endpoint)
+  - **Response:** `{"status": "analyzing|completed|processed|error", "progress": 40, "timestamp": "2025-01-20T10:30:00Z"}`
+- **Delivery:** `GET /api/delivery/{run_id}` (internal endpoint)
+  - **Response:** `{"status": "processed", "data": [...], "total_records": 12, "generated_at": "2025-01-20T10:35:00Z"}`
 
-**Event Management Simulator:**
-Generates event data including event names, dates, locations, descriptions, capacity limits, pricing, organizer information, and status indicators. Uses realistic event naming and scheduling patterns.
+**Job Market Scraper Simulator:**
+- **Run Request:** `POST https://ml-scraper.internal/api/scrape`
+  - **Headers:** `Content-Type: application/json`, `Authorization: Bearer {auth_key}`
+  - **Body:** `{"search_params": "{run_setup}", "batch_size": "{max_objects}", "callback": "{webhook_url}", "job_id": "{id}"}`
+  - **Response:** `{"status": "queued", "job_id": "{generated_id}", "estimated_duration": 420}`
+- **Status Check:** `GET /api/status/{job_id}` (internal endpoint)
+  - **Response:** `{"status": "scraping|ready|completed|failed|timeout", "progress": 30, "timestamp": "2025-01-20T10:30:00Z"}`
+- **Delivery:** `GET /api/delivery/{job_id}` (internal endpoint)
+  - **Response:** `{"status": "completed", "data": [...], "total_records": 200, "generated_at": "2025-01-20T10:37:00Z"}`
 
-**Step 3: Value Generation System**
+**E-commerce Scraper Simulator:**
+- **Run Request:** `POST https://api.ecommerce-scraper.com/v2/scrape`
+  - **Headers:** `Content-Type: application/json`, `X-API-Token: {auth_key}`, `X-Request-ID: {id}`
+  - **Body:** `{"platforms": ["amazon", "ebay", "shopify"], "filters": "{run_setup}", "pagination": {"max_pages": 50, "per_page": "{max_objects}"}, "webhook_url": "{webhook_url}", "request_id": "{id}"}`
+  - **Response:** `{"status": "waiting", "request_id": "{generated_id}", "estimated_duration": 156}`
+- **Status Check:** `GET https://api.ecommerce-scraper.com/v2/requests/{run_external_id}/status`
+  - **Headers:** `X-API-Token: {auth_key}`
+  - **Response:** `{"status": "in_progress|ready|done|failed|timedout", "progress": 65, "timestamp": "2025-01-20T10:30:00Z"}`
+- **Delivery:** `GET https://api.ecommerce-scraper.com/v2/requests/{run_external_id}/results`
+  - **Headers:** `X-API-Token: {auth_key}`
+  - **Response:** `{"status": "done", "data": [...], "total_records": 500, "generated_at": "2025-01-20T10:33:00Z"}`
 
-**Purpose:** Create field-specific generators that produce realistic data relationships
+**Event Management System Simulator:**
+- **Run Request:** `POST https://event-llm.internal/api/process`
+  - **Headers:** `Content-Type: application/json`, `Authorization: Bearer {auth_key}`
+  - **Body:** `{"event_query": "{run_setup}", "date_range": {"start": "{start_date}", "end": "{end_date}"}, "webhook_url": "{webhook_url}", "run_id": "{id}"}`
+  - **Response:** `{"status": "waiting", "run_id": "{generated_id}", "estimated_duration": 210}`
+- **Status Check:** `GET https://event-llm.internal/api/status/{run_external_id}`
+  - **Headers:** `Authorization: Bearer {auth_key}`
+  - **Response:** `{"status": "in_progress|ready|done|failed|timedout", "progress": 80, "timestamp": "2025-01-20T10:30:00Z"}`
+- **Delivery:** `GET /api/delivery/{run_id}` (internal endpoint)
+  - **Response:** `{"status": "done", "data": [...], "total_records": 75, "generated_at": "2025-01-20T10:33:30Z"}`
 
-**Field-Specific Generators:**
-Text fields use appropriate generators for names, emails, websites, and descriptions. Numeric fields use realistic ranges for counts, prices, and measurements. Date fields generate appropriate timestamps within reasonable ranges. Array fields create realistic collections of related items. Boolean fields generate true/false values based on realistic probabilities. Enum fields select from predefined lists of valid options. Location fields generate realistic geographic data. ID fields create unique identifiers using appropriate formats.
+**Automotive Database Simulator:**
+- **Run Request:** `POST https://auto-db.internal/api/query`
+  - **Headers:** `Content-Type: application/json`
+  - **Body:** `{"sql_query": "{run_setup}", "webhook_url": "{webhook_url}", "run_id": "{id}"}`
+  - **Response:** `{"status": "waiting", "run_id": "{generated_id}", "estimated_duration": 35}`
+- **Status Check:** `GET /api/status/{run_id}` (internal endpoint)
+  - **Response:** `{"status": "in_progress|ready|done|failed|timedout", "progress": 90, "timestamp": "2025-01-20T10:30:00Z"}`
+- **Delivery:** `GET /api/delivery/{run_id}` (internal endpoint)
+  - **Response:** `{"status": "done", "data": [...], "total_records": 120, "generated_at": "2025-01-20T10:30:35Z"}`
+
+**Health Check Endpoint (All Simulators):**
+- **URL Pattern:** `GET /api/health`
+- **Response:** `{"status": "healthy", "uptime": "2h 15m", "source_type": "Dataset|Integration|Agent|ML model|LLM", "max_concurrent_runs": 50, "timeout": 60}`
+
+## Step 2: Comprehensive Statistics Logging
+
+**Purpose:** Generate detailed statistics that can be cross-checked with backend ETL processing
+
+**Data Generation Statistics (Per Object Type):**
+
+**Person Object Type (LinkedIn People Dataset):**
+- **Record Counts:** 50-500 people per run, varying by filter criteria
+- **Field Completeness:** name (100%), email (95%), phone (80%), linkedin_url (90%), skills (100%), experience_years (100%), current_company (85%), location (100%)
+- **Data Quality Metrics:** Valid email format (95%), realistic experience years (100%), consistent location data (100%)
+- **Schema Compliance:** All records match person datapoint schema from `@datapoints.json`
+
+**Company Object Type (AI Company Researcher):**
+- **Record Counts:** 10-100 companies per run, varying by query complexity
+- **Field Completeness:** name (100%), industry (100%), size (100%), revenue (90%), website (95%), description (100%), founded_year (100%), location (100%)
+- **Data Quality Metrics:** Valid website URLs (95%), realistic revenue-to-size ratios (100%), consistent industry classifications (100%)
+- **Schema Compliance:** All records match company datapoint schema from `@datapoints.json`
+
+**Property Object Type (Real Estate API):**
+- **Record Counts:** 25-300 properties per run, varying by location and price filters
+- **Field Completeness:** address (100%), price (100%), bedrooms (100%), bathrooms (100%), square_feet (95%), property_type (100%), listing_date (100%), agent_name (90%)
+- **Data Quality Metrics:** Realistic price-to-size ratios (100%), valid property types (100%), consistent location data (100%)
+- **Schema Compliance:** All records match property datapoint schema from `@datapoints.json`
+
+**Product Object Type (E-commerce Scraper):**
+- **Record Counts:** 100-1000 products per run, varying by platform and category filters
+- **Field Completeness:** name (100%), price (100%), category (100%), brand (95%), description (100%), availability (100%), rating (90%), review_count (85%)
+- **Data Quality Metrics:** Realistic price ranges per category (100%), valid product categories (100%), consistent brand information (100%)
+- **Schema Compliance:** All records match product datapoint schema from `@datapoints.json`
+
+**Vehicle Object Type (Automotive Database):**
+- **Record Counts:** 50-200 vehicles per run, varying by make/model filters
+- **Field Completeness:** make (100%), model (100%), year (100%), price (100%), mileage (100%), condition (100%), fuel_type (100%), transmission (100%)
+- **Data Quality Metrics:** Realistic year-to-price relationships (100%), valid fuel types (100%), consistent make-model combinations (100%)
+- **Schema Compliance:** All records match vehicle datapoint schema from `@datapoints.json`
+
+**Document Object Type (ESG Agent):**
+- **Record Counts:** 10-50 documents per run, varying by document type filters
+- **Field Completeness:** title (100%), content (100%), document_type (100%), esg_category (100%), confidence_score (100%), processing_date (100%), source (100%)
+- **Data Quality Metrics:** Valid ESG categories (100%), realistic confidence scores (100%), consistent document types (100%)
+- **Schema Compliance:** All records match document datapoint schema from `@datapoints.json`
+
+**Jobpost Object Type (Job Market Scraper):**
+- **Record Counts:** 100-500 job postings per run, varying by search parameters
+- **Field Completeness:** title (100%), company (100%), location (100%), salary_range (80%), job_type (100%), description (100%), requirements (100%), posted_date (100%)
+- **Data Quality Metrics:** Realistic salary ranges per job type (100%), valid job types (100%), consistent company information (100%)
+- **Schema Compliance:** All records match jobpost datapoint schema from `@datapoints.json`
+
+**Event Object Type (Event Management System):**
+- **Record Counts:** 25-250 events per run, varying by date range filters
+- **Field Completeness:** name (100%), date (100%), location (100%), description (100%), capacity (100%), price (100%), organizer (100%), status (100%)
+- **Data Quality Metrics:** Future event dates (100%), realistic capacity numbers (100%), consistent pricing (100%)
+- **Schema Compliance:** All records match event datapoint schema from `@datapoints.json`
+
+**Performance Statistics:**
+- **Response Times:** Run request (50-200ms), Status check (10-50ms), Delivery (100-500ms)
+- **Generation Duration:** Based on source configuration: LinkedIn (45s), Real Estate (78s), AI Researcher (95s), ESG Agent (300s), Job Scraper (420s), E-commerce (156s), Event Management (210s), Automotive (35s)
+- **Status Transition Timing:** waiting → in_progress (1-5s), in_progress → ready (varies by source), ready → done (immediate)
+
+**Data Content Analysis:**
+- **Value Distributions:** Realistic ranges based on object type (e.g., person ages 22-65, company revenues $10K-$10B, property prices $50K-$5M)
+- **Relationship Integrity:** Consistent cross-references (person → company, product → category, event → organizer)
+- **Data Variety:** 80% unique values, 20% realistic duplicates per field type
+- **Edge Case Coverage:** Empty fields (5%), malformed data (2%), extreme values (3%), missing relationships (1%)
+
+**Error Simulation Tracking:**
+- **Intentional Errors:** 5% timeout rate, 3% malformed JSON, 2% authentication failures
+- **Error Recovery:** Automatic retry with exponential backoff, graceful degradation
+- **Timeout Scenarios:** 10% of requests exceed estimated duration by 50%
+- **Data Corruption:** 1% of records have intentionally malformed fields for testing
+
+## Step 3: Value Generation System
+
+**Purpose:** Create field-specific generators that produce realistic data relationships based on actual datapoints from `@datapoints.json`
+
+**Field-Specific Generators (Per Object Type):**
+
+**Person Object Type Generators:**
+- **name:** Realistic first and last names from professional databases
+- **email:** Generated from name using patterns: firstname.lastname@company.com, f.lastname@company.com
+- **phone:** US phone numbers with area codes matching location data
+- **linkedin_url:** https://linkedin.com/in/firstname-lastname-{random_suffix}
+- **skills:** Professional skills arrays (5-15 skills) with realistic combinations
+- **experience_years:** 0-40 years based on realistic career progression
+- **current_company:** Company names from realistic business database
+- **location:** US cities with consistent state/zip code combinations
+
+**Company Object Type Generators:**
+- **name:** Realistic company names with proper suffixes (Inc, LLC, Corp, Ltd)
+- **industry:** Valid industries from predefined list matching company type
+- **size:** Employee count (1-100,000) with realistic distribution
+- **revenue:** Annual revenue matching company size and industry
+- **website:** https://{company_name}.com with realistic domain patterns
+- **description:** Company descriptions with industry-specific terminology
+- **founded_year:** 1800-2024 with realistic founding patterns
+- **location:** Headquarters cities with consistent geographic data
+
+**Property Object Type Generators:**
+- **address:** Realistic street addresses in specified cities
+- **price:** Property values based on location, size, and type
+- **bedrooms:** 1-6 bedrooms with realistic distribution
+- **bathrooms:** 1-4 bathrooms matching bedroom count
+- **square_feet:** Square footage matching bedroom/bathroom count
+- **property_type:** Single Family, Condo, Townhouse, Multi-family
+- **listing_date:** Recent dates within last 6 months
+- **agent_name:** Realistic real estate agent names
+
+**Product Object Type Generators:**
+- **name:** Product names with brand and model information
+- **price:** Realistic price ranges based on category and brand
+- **category:** Electronics, Clothing, Home & Garden, Sports, Books
+- **brand:** Realistic brand names matching category
+- **description:** Product descriptions with technical specifications
+- **availability:** In Stock, Limited Stock, Out of Stock
+- **rating:** 1.0-5.0 stars with realistic distribution
+- **review_count:** 0-10,000 reviews matching rating patterns
+
+**Vehicle Object Type Generators:**
+- **make:** Toyota, Honda, Ford, BMW, Mercedes, Tesla, etc.
+- **model:** Realistic model names matching make
+- **year:** 2010-2024 with realistic age distribution
+- **price:** Vehicle values based on make, model, year, condition
+- **mileage:** 0-200,000 miles with realistic patterns
+- **condition:** Excellent, Good, Fair, Poor
+- **fuel_type:** Gasoline, Electric, Hybrid, Diesel
+- **transmission:** Automatic, Manual, CVT
+
+**Document Object Type Generators:**
+- **title:** ESG document titles with professional terminology
+- **content:** Realistic document content with ESG keywords
+- **document_type:** Report, Policy, Assessment, Statement
+- **esg_category:** Environmental, Social, Governance
+- **confidence_score:** 0.0-1.0 with realistic distribution
+- **processing_date:** Recent dates within last 30 days
+- **source:** Document source organizations
+
+**Jobpost Object Type Generators:**
+- **title:** Professional job titles with realistic seniority levels
+- **company:** Company names matching job market data
+- **location:** US cities with job market presence
+- **salary_range:** Realistic salary ranges based on title and location
+- **job_type:** Full-time, Part-time, Contract, Internship
+- **description:** Job descriptions with required qualifications
+- **requirements:** Skills and experience requirements
+- **posted_date:** Recent dates within last 30 days
+
+**Event Object Type Generators:**
+- **name:** Event names with professional conference terminology
+- **date:** Future dates within next 12 months
+- **location:** Conference centers and venues in major cities
+- **description:** Event descriptions with agenda information
+- **capacity:** 50-10,000 attendees with realistic distribution
+- **price:** Ticket prices based on event type and capacity
+- **organizer:** Event management companies and organizations
+- **status:** Active, Sold Out, Cancelled, Postponed
 
 **Realistic Data Relationships:**
-Email addresses match the person's name. Company websites use the company name in the domain. Phone numbers use appropriate area codes for the location. LinkedIn URLs use the person's name in the username. Skills arrays contain related professional skills. Technology stacks include complementary technologies. Financial data uses realistic ratios between revenue and employee count.
+- **Email Consistency:** Email addresses match person names and company domains
+- **Website Consistency:** Company websites use company names in domains
+- **Geographic Consistency:** Phone numbers use appropriate area codes for locations
+- **Professional Consistency:** LinkedIn URLs use person names in usernames
+- **Skill Relationships:** Skills arrays contain related professional skills for job titles
+- **Technology Relationships:** Technology stacks include complementary technologies
+- **Financial Relationships:** Realistic ratios between revenue and employee count
+- **Location Relationships:** Addresses, phone numbers, and companies in same geographic area
+- **Industry Relationships:** Company industries match job postings and skill requirements
 
-**Step 4: API Response Simulation**
+## Step 4: API Response Simulation
 
-**Purpose:** Simulate realistic API responses with proper timing and status progression
+**Purpose:** Simulate realistic API responses with proper timing and status progression matching source configurations
 
-**Run Request Response:**
-Creates a unique run identifier, estimates processing time based on the requested data volume, stores the run configuration in memory, and returns the run ID with status and estimated duration. Simulates the initial acknowledgment of a data processing request.
+**Run Request Response (Per Source):**
+- **LinkedIn People Dataset:** Creates run_id, estimates 45s duration, stores filter criteria and max_objects
+- **Real Estate API:** Creates request_id, estimates 78s duration, stores filters and max_results
+- **AI Company Researcher:** Creates run_id, estimates 95s duration, stores query parameters
+- **ESG Agent:** Creates run_id, estimates 300s duration, stores document_id
+- **Job Market Scraper:** Creates job_id, estimates 420s duration, stores search_params and batch_size
+- **E-commerce Scraper:** Creates request_id, estimates 156s duration, stores platforms, filters, and pagination
+- **Event Management:** Creates run_id, estimates 210s duration, stores event_query and date_range
+- **Automotive Database:** Creates run_id, estimates 35s duration, stores sql_query
 
-**Status Check Response:**
-Retrieves the stored run information, calculates elapsed time since creation, determines current status based on processing progress, updates the run status if needed, and returns current status with progress percentage and timestamps. Simulates checking the progress of a running data processing job.
+**Status Check Response (Per Source):**
+- **LinkedIn:** Returns status from waiting → in_progress → ready → done with progress 0-100%
+- **Real Estate:** Returns status from waiting → in_progress → ready → done with progress 0-100%
+- **AI Researcher:** Returns status from waiting → processing → ready with progress 0-100%
+- **ESG Agent:** Returns status from queued → analyzing → completed → processed with progress 0-100%
+- **Job Scraper:** Returns status from queued → scraping → ready → completed with progress 0-100%
+- **E-commerce:** Returns status from waiting → in_progress → ready → done with progress 0-100%
+- **Event Management:** Returns status from waiting → in_progress → ready → done with progress 0-100%
+- **Automotive:** Returns status from waiting → in_progress → ready → done with progress 0-100%
 
-**Data Delivery Response:**
-Verifies the run is in ready status, generates the requested data based on the original run setup, calculates total record count, and returns the complete dataset with metadata. Simulates the final delivery of processed data.
+**Data Delivery Response (Per Object Type):**
+- **Person Data:** Returns array of person objects with all required fields populated
+- **Company Data:** Returns array of company objects with industry-specific information
+- **Property Data:** Returns array of property objects with location and pricing data
+- **Product Data:** Returns array of product objects with category and platform information
+- **Vehicle Data:** Returns array of vehicle objects with make/model specifications
+- **Document Data:** Returns array of document objects with ESG classification
+- **Jobpost Data:** Returns array of job posting objects with salary and requirements
+- **Event Data:** Returns array of event objects with scheduling and capacity information
 
-**Step 5: Integration with Backend**
+**Response Timing Simulation:**
+- **Immediate Response:** Run request returns within 50-200ms
+- **Status Progression:** waiting (1-5s) → in_progress (varies by source) → ready (immediate)
+- **Data Generation:** Background process generates data during in_progress status
+- **Delivery Response:** Returns complete dataset within 100-500ms when ready
 
-**Purpose:** Ensure simulators work seamlessly with the existing backend infrastructure
+## Step 5: Integration with Backend
+
+**Purpose:** Ensure simulators work seamlessly with existing backend infrastructure
 
 **Edge Function Integration:**
-Replace real API calls with simulator calls during development by using environment variables to switch between simulator and production endpoints. Maintain the same API interface so edge functions work identically with both simulators and real APIs.
+- **Environment Variable Switching:** Use `SIMULATOR_MODE=true` to switch from real APIs to simulators
+- **URL Mapping:** Map real API URLs to localhost simulator endpoints (e.g., `api.linkedin.com` → `localhost:3001`)
+- **Header Preservation:** Maintain exact header formats and authentication methods from source templates
+- **Request/Response Compatibility:** Ensure edge functions work identically with both simulators and real APIs
+- **Logging Integration:** Log all edge function interactions with run_id correlation for cross-checking
 
 **Database Integration:**
-Simulators write generated data to local database tables using the same schema as the real system. Edge functions read from simulator-generated data maintaining referential integrity. Generated IDs are consistent across all related records.
+- **Schema Compatibility:** Write generated data to local database tables using exact schema from `@database/` migrations
+- **ID Consistency:** Generate UUIDs that are consistent across all related records (person → company, product → category)
+- **Referential Integrity:** Maintain foreign key relationships between generated records
+- **Value Table Population:** Populate `value` table with generated data matching datapoint schemas
+- **Activity Integration:** Link generated data to activity runs and workflow executions
 
-**Configuration Management:**
-Each simulator has its own configuration file specifying port numbers, base API paths, supported data types, maximum record limits, response delays, and error rates. This allows fine-tuning each simulator independently.
+**Configuration Management (Per Simulator):**
+- **Port Configuration:** Each simulator runs on unique port (3001-3008)
+- **Base API Paths:** Match exact URL patterns from source templates
+- **Data Type Support:** Configure supported object types and datapoints per simulator
+- **Record Limits:** Set maximum records per run based on source configuration
+- **Response Delays:** Configure realistic response times matching source timeouts
+- **Error Rates:** Set configurable error injection rates for testing
+- **Authentication:** Configure auth keys matching source configurations
 
-**Step 6: Testing Scenarios**
+**Simulator-Specific Configurations:**
+- **LinkedIn Simulator:** Port 3001, supports person object type, max 500 records, 45s timeout
+- **Real Estate Simulator:** Port 3002, supports property object type, max 300 records, 78s timeout
+- **AI Researcher Simulator:** Port 3003, supports company object type, max 100 records, 95s timeout
+- **ESG Agent Simulator:** Port 3004, supports document object type, max 50 records, 300s timeout
+- **Job Scraper Simulator:** Port 3005, supports jobpost object type, max 500 records, 420s timeout
+- **E-commerce Simulator:** Port 3006, supports product object type, max 1000 records, 156s timeout
+- **Event Management Simulator:** Port 3007, supports event object type, max 250 records, 210s timeout
+- **Automotive Simulator:** Port 3008, supports vehicle object type, max 200 records, 35s timeout
+
+## Step 6: Testing Scenarios
 
 **Purpose:** Create comprehensive test scenarios that cover all edge cases and error conditions
 
-**Edge Case Simulation:**
-Configure simulators to occasionally return empty responses, generate API errors, introduce response delays, return partial data with missing fields, produce malformed JSON responses, and simulate rate limiting. This tests the system's error handling and resilience.
+**Edge Case Simulation (Per Source):**
+- **Empty Responses:** 5% of runs return empty data arrays
+- **API Errors:** 3% authentication failures, 2% malformed JSON responses
+- **Timeout Scenarios:** 10% of runs exceed estimated duration by 50%
+- **Partial Data:** 2% of runs return incomplete records with missing fields
+- **Rate Limiting:** Simulate 429 responses with retry-after headers
+- **Network Errors:** 1% connection timeouts and network failures
+- **Data Corruption:** 1% of records have intentionally malformed fields
 
-**Timeout and Error Simulation:**
-Simulators randomly generate responses that take longer than the configured timeout period, causing the system to timeout and handle the error gracefully. Simulators also randomly return various error responses including network errors, authentication failures, and server errors.
+**Data Volume Testing (Per Object Type):**
+- **Small Datasets:** 10-50 records for quick testing and development
+- **Medium Datasets:** 50-500 records for normal operation testing
+- **Large Datasets:** 500-2000 records for performance testing
+- **Stress Test Datasets:** 2000+ records for scalability testing
+- **Volume Metrics:** Log processing times, memory usage, and throughput rates
 
-**Data Volume Testing:**
-Generate small datasets with 10-100 records for quick testing, medium datasets with 100-1000 records for normal operation testing, large datasets with 1000-10000 records for performance testing, and stress test datasets with 10000+ records for scalability testing.
+**Realistic Data Patterns (Per Object Type):**
+- **Person-Company Relationships:** Generate people working at realistic companies
+- **Product-Category Relationships:** Generate products with proper category classifications
+- **Property-Location Relationships:** Generate properties in consistent geographic areas
+- **Job-Company Relationships:** Generate job postings from realistic companies
+- **Event-Organizer Relationships:** Generate events with consistent organizer information
+- **Vehicle-Make-Model Relationships:** Generate vehicles with proper make/model combinations
+- **Document-ESG Relationships:** Generate documents with appropriate ESG classifications
 
-**Realistic Data Patterns:**
-Generate data that follows realistic business patterns such as companies having multiple employees, products belonging to categories, properties in the same geographic area, and jobs from the same companies. Maintain referential integrity across related records.
+**Error Recovery Testing:**
+- **Retry Logic:** Test exponential backoff for failed requests
+- **Graceful Degradation:** Test system behavior with partial data
+- **Fallback Mechanisms:** Test alternative data sources when primary fails
+- **Data Validation:** Test validation of corrupted or incomplete data
 
-**Step 7: Realistic Data Relationships**
+## Step 7: Cross-Checking Integration
 
-**Purpose:** Ensure generated data maintains logical consistency and business relationships
+**Purpose:** Enable comprehensive comparison between simulator output and backend ETL processing
 
-**Cross-Reference Consistency:**
-Ensure that when a person works for a company, their company information matches the company data. When a product belongs to a category, the category exists in the category data. When a property is listed by an agent, the agent information is consistent.
+**Logging Format Standardization:**
+- **Log Format:** JSON format with consistent structure across all simulators
+- **Required Fields:** run_id, timestamp, simulator_name, endpoint, status, duration, record_count
+- **Correlation IDs:** Include run_id in all log entries for backend correlation
+- **Timestamp Format:** ISO 8601 format with timezone information
+- **Field Naming:** Use consistent snake_case naming convention
 
-**Temporal Consistency:**
-Generate dates that make sense chronologically. Job postings should have posting dates before expiry dates. Company founding years should be before current year. Event dates should be in the future for upcoming events.
+**Data Integrity Verification:**
+- **Record Counts:** Log exact number of records generated per object type
+- **Field Completeness:** Log percentage of populated vs empty fields per datapoint
+- **Data Quality Metrics:** Log count of malformed records and validation failures
+- **Relationship Integrity:** Log count of valid cross-references between related records
+- **Schema Compliance:** Log percentage of records matching expected datapoint schemas
 
-**Geographic Consistency:**
-Ensure location data is realistic with cities matching states, states matching countries, and ZIP codes matching geographic areas. Use consistent location naming and formatting.
+**Performance Comparison:**
+- **Response Times:** Log API endpoint response times (run, status, delivery)
+- **Generation Duration:** Log data generation time per object type
+- **Throughput Rates:** Log records generated per second
+- **Status Transitions:** Log timing of status changes (waiting → in_progress → ready)
+- **Memory Usage:** Log memory consumption during data generation
 
-**Step 8: Random Response Variations**
+**Error Handling Verification:**
+- **Intentional Errors:** Log all injected errors with expected vs actual behavior
+- **Error Recovery:** Log success/failure rates of retry mechanisms
+- **Timeout Scenarios:** Log which requests exceeded timeout thresholds
+- **Data Corruption:** Log validation results for intentionally malformed data
+- **System Resilience:** Log system behavior under various error conditions
 
-**Purpose:** Simulate real-world API behavior with unpredictable responses and timing
+**Cross-Checking Reports:**
+- **Daily Summary:** Generate daily reports comparing simulator vs backend metrics
+- **Performance Analysis:** Compare response times and throughput rates
+- **Data Quality Analysis:** Compare data completeness and validation results
+- **Error Analysis:** Compare error rates and recovery success rates
+- **Relationship Analysis:** Verify cross-reference integrity between systems
 
-**Response Time Variations:**
-Simulators randomly vary response times from immediate responses to responses that exceed timeout periods. Some requests complete quickly while others take significantly longer than expected, testing the system's timeout handling.
+This comprehensive simulation system provides realistic test data that matches actual source schemas while generating detailed logs that can be cross-checked with backend ETL processing to ensure data integrity, verify performance metrics, and validate system reliability across the entire pipeline.
 
-**Data Quality Variations:**
-Generate responses with varying data quality including complete data, partial data with missing fields, malformed data structures, and completely empty responses. This tests the system's data validation and error handling capabilities.
+### Phase 5: Factor-Source Request Template Generation
 
-**Status Variations:**
-Randomly return different status codes and error conditions including successful responses, temporary failures, permanent failures, and unexpected status codes. This tests the system's status handling and error recovery mechanisms.
+**Purpose:** Generate `factor_source` records that contain request body templates for `run_setup` to enable proper API requests to source simulators
 
-**Volume Variations:**
-Generate responses with varying data volumes from empty responses to responses with thousands of records. Some requests return no data while others return massive datasets, testing the system's data processing capabilities.
+**Compatibility Requirement:** This phase must learn from all previously generated files (Phase 1 sources, Phase 2 factors, Phase 3 activities) to ensure `factor_source` records reference correct IDs and create realistic request templates that work with the simulators from Phase 4.
 
-This simulation system provides realistic test data that matches actual source schemas while allowing comprehensive testing of the entire pipeline from source APIs through edge functions to the database, all running on localhost for development and testing purposes. The random variations and error conditions ensure the system is robust and handles real-world scenarios effectively.
+**Target File:** `data/factor-sources.json`
+
+**Database Table:** `public.factor_source`
+**Fields:** id, factor_id, source_id, setup, key_mapping, created_at, updated_at, deleted_at
+
+**Step 1: Factor-Source Mapping Analysis**
+
+**Purpose:** Determine which factors should be associated with which sources based on activities and create realistic request templates
+
+**Source-Factor Analysis by Activity:**
+
+**Stackable Sources (Multiple factors per request):**
+- **LinkedIn People Dataset** (person object type) - 39 factors
+- **Real Estate API** (property object type) - 36 factors  
+- **E-commerce Scraper** (product object type) - 39 factors
+- **Job Market Scraper** (jobpost object type) - 39 factors
+- **Event Management System** (event object type) - 39 factors
+- **Automotive Database** (vehicle object type) - 39 factors
+- **ML Model Trainer** (company object type) - 39 factors
+- **Fireworks Fine-tuning** (company object type) - 39 factors
+
+**Standalone Sources (Individual factors per request):**
+- **AI Company Researcher** (company object type) - 39 factors
+- **ESG Agent** (document object type) - 36 factors
+- **ML Model Inference** (company object type) - 39 factors
+
+**Step 2: Request Template Generation Strategy**
+
+**Purpose:** Create realistic `factor_source.setup` JSON that contains parts of the request body for `run_setup` to be sent to source simulators
+
+**Template Generation Rules:**
+- **Guardrail Factors:** Map to concrete request parameters (filters, criteria, validation rules)
+- **Use Case Factors:** Map to data inclusion flags and open-ended query parameters
+- **Stackable Requests:** Combine multiple guardrail factors into single request with combined filters
+- **Standalone Requests:** Create individual requests for use case factors or complex business logic factors
+- **No max_objects/max_results:** These are separate variables, not part of `factor_source.setup`
+- **Empty key_mapping:** Keep `key_mapping` field empty as specified
+
+**Step 3: Stackable Factor-Source Records (104 records)**
+
+**LinkedIn People Dataset (13 stackable groups):**
+- **Group 1:** Use case factor + 2 guardrail factors for `name` datapoint
+- **Group 2:** Use case factor + 2 guardrail factors for `email` datapoint
+- **Group 3:** Use case factor + 2 guardrail factors for `role` datapoint
+- **Group 4:** Use case factor + 2 guardrail factors for `department` datapoint
+- **Group 5:** Use case factor + 2 guardrail factors for `salary` datapoint
+- **Group 6:** Use case factor + 2 guardrail factors for `hourly_rate` datapoint
+- **Group 7:** Use case factor + 2 guardrail factors for `skills` datapoint
+- **Group 8:** Use case factor + 2 guardrail factors for `phone` datapoint
+- **Group 9:** Use case factor + 2 guardrail factors for `linkedin` datapoint
+- **Group 10:** Use case factor + 2 guardrail factors for `website` datapoint
+- **Group 11:** Use case factor + 2 guardrail factors for `experience_years` datapoint
+- **Group 12:** Use case factor + 2 guardrail factors for `education` datapoint
+- **Group 13:** Use case factor + 2 guardrail factors for `specialization` datapoint
+
+**Real Estate API (12 stackable groups):**
+- **Group 1:** Use case factor + 2 guardrail factors for `listing_id` datapoint
+- **Group 2:** Use case factor + 2 guardrail factors for `street` datapoint
+- **Group 3:** Use case factor + 2 guardrail factors for `city` datapoint
+- **Group 4:** Use case factor + 2 guardrail factors for `state` datapoint
+- **Group 5:** Use case factor + 2 guardrail factors for `zip_code` datapoint
+- **Group 6:** Use case factor + 2 guardrail factors for `price` datapoint
+- **Group 7:** Use case factor + 2 guardrail factors for `bedrooms` datapoint
+- **Group 8:** Use case factor + 2 guardrail factors for `bathrooms` datapoint
+- **Group 9:** Use case factor + 2 guardrail factors for `square_feet` datapoint
+- **Group 10:** Use case factor + 2 guardrail factors for `property_type` datapoint
+- **Group 11:** Use case factor + 2 guardrail factors for `listing_date` datapoint
+- **Group 12:** Use case factor + 2 guardrail factors for `status` datapoint
+
+**E-commerce Scraper (13 stackable groups):**
+- **Group 1:** Use case factor + 2 guardrail factors for `sku` datapoint
+- **Group 2:** Use case factor + 2 guardrail factors for `title` datapoint
+- **Group 3:** Use case factor + 2 guardrail factors for `description` datapoint
+- **Group 4:** Use case factor + 2 guardrail factors for `price` datapoint
+- **Group 5:** Use case factor + 2 guardrail factors for `category` datapoint
+- **Group 6:** Use case factor + 2 guardrail factors for `brand` datapoint
+- **Group 7:** Use case factor + 2 guardrail factors for `availability` datapoint
+- **Group 8:** Use case factor + 2 guardrail factors for `rating` datapoint
+- **Group 9:** Use case factor + 2 guardrail factors for `reviews_count` datapoint
+
+**Job Market Scraper (13 stackable groups):**
+- **Group 1:** Use case factor + 2 guardrail factors for `title` datapoint
+- **Group 2:** Use case factor + 2 guardrail factors for `company` datapoint
+- **Group 3:** Use case factor + 2 guardrail factors for `location` datapoint
+- **Group 4:** Use case factor + 2 guardrail factors for `salary_range` datapoint
+- **Group 5:** Use case factor + 2 guardrail factors for `employment_type` datapoint
+- **Group 6:** Use case factor + 2 guardrail factors for `experience_level` datapoint
+- **Group 7:** Use case factor + 2 guardrail factors for `skills_required` datapoint
+- **Group 8:** Use case factor + 2 guardrail factors for `description` datapoint
+- **Group 9:** Use case factor + 2 guardrail factors for `posted_date` datapoint
+- **Group 10:** Use case factor + 2 guardrail factors for `expiry_date` datapoint
+
+**Event Management System (13 stackable groups):**
+- **Group 1:** Use case factor + 2 guardrail factors for `name` datapoint
+- **Group 2:** Use case factor + 2 guardrail factors for `date` datapoint
+- **Group 3:** Use case factor + 2 guardrail factors for `location` datapoint
+- **Group 4:** Use case factor + 2 guardrail factors for `description` datapoint
+- **Group 5:** Use case factor + 2 guardrail factors for `capacity` datapoint
+- **Group 6:** Use case factor + 2 guardrail factors for `price` datapoint
+- **Group 7:** Use case factor + 2 guardrail factors for `organizer` datapoint
+- **Group 8:** Use case factor + 2 guardrail factors for `status` datapoint
+
+**Automotive Database (13 stackable groups):**
+- **Group 1:** Use case factor + 2 guardrail factors for `vin` datapoint
+- **Group 2:** Use case factor + 2 guardrail factors for `make` datapoint
+- **Group 3:** Use case factor + 2 guardrail factors for `model` datapoint
+- **Group 4:** Use case factor + 2 guardrail factors for `year` datapoint
+- **Group 5:** Use case factor + 2 guardrail factors for `color` datapoint
+- **Group 6:** Use case factor + 2 guardrail factors for `mileage` datapoint
+- **Group 7:** Use case factor + 2 guardrail factors for `price` datapoint
+- **Group 8:** Use case factor + 2 guardrail factors for `condition` datapoint
+- **Group 9:** Use case factor + 2 guardrail factors for `fuel_type` datapoint
+- **Group 10:** Use case factor + 2 guardrail factors for `transmission` datapoint
+
+**ML Model Trainer (13 stackable groups):**
+- **Group 1:** Use case factor + 2 guardrail factors for `name` datapoint
+- **Group 2:** Use case factor + 2 guardrail factors for `website` datapoint
+- **Group 3:** Use case factor + 2 guardrail factors for `industry` datapoint
+- **Group 4:** Use case factor + 2 guardrail factors for `employee_count` datapoint
+- **Group 5:** Use case factor + 2 guardrail factors for `founded_year` datapoint
+- **Group 6:** Use case factor + 2 guardrail factors for `revenue` datapoint
+- **Group 7:** Use case factor + 2 guardrail factors for `funding` datapoint
+- **Group 8:** Use case factor + 2 guardrail factors for `currency` datapoint
+- **Group 9:** Use case factor + 2 guardrail factors for `city` datapoint
+- **Group 10:** Use case factor + 2 guardrail factors for `state` datapoint
+- **Group 11:** Use case factor + 2 guardrail factors for `country` datapoint
+- **Group 12:** Use case factor + 2 guardrail factors for `technologies` datapoint
+- **Group 13:** Use case factor + 2 guardrail factors for `status` datapoint
+
+**Fireworks Fine-tuning (13 stackable groups):**
+- **Group 1:** Use case factor + 2 guardrail factors for `name` datapoint
+- **Group 2:** Use case factor + 2 guardrail factors for `website` datapoint
+- **Group 3:** Use case factor + 2 guardrail factors for `industry` datapoint
+- **Group 4:** Use case factor + 2 guardrail factors for `employee_count` datapoint
+- **Group 5:** Use case factor + 2 guardrail factors for `founded_year` datapoint
+- **Group 6:** Use case factor + 2 guardrail factors for `revenue` datapoint
+- **Group 7:** Use case factor + 2 guardrail factors for `funding` datapoint
+- **Group 8:** Use case factor + 2 guardrail factors for `currency` datapoint
+- **Group 9:** Use case factor + 2 guardrail factors for `city` datapoint
+- **Group 10:** Use case factor + 2 guardrail factors for `state` datapoint
+- **Group 11:** Use case factor + 2 guardrail factors for `country` datapoint
+- **Group 12:** Use case factor + 2 guardrail factors for `technologies` datapoint
+- **Group 13:** Use case factor + 2 guardrail factors for `status` datapoint
+
+**Step 4: Standalone Factor-Source Records (114 records)**
+
+**AI Company Researcher (39 individual records):**
+- Each factor gets its own individual request
+- Guardrail factors: Concrete filters and criteria for company search
+- Use case factors: Open-ended query parameters for data inclusion
+
+**ESG Agent (36 individual records):**
+- Each factor gets its own individual request
+- Guardrail factors: Document validation criteria and content filters
+- Use case factors: Document analysis parameters and data extraction flags
+
+**ML Model Inference (39 individual records):**
+- Each factor gets its own individual request
+- Guardrail factors: Inference parameters and model validation criteria
+- Use case factors: Prediction parameters and data inclusion flags
+
+**Step 5: Request Template Examples**
+
+**Stackable Request Template (LinkedIn People Dataset):**
+```json
+{
+  "id": "uuid",
+  "factor_id": "use-case-name-factor-id",
+  "source_id": "linkedin-people-dataset-id",
+  "setup": {
+    "filters": {
+      "location": "San Francisco",
+      "experience_years": ">5",
+      "skills": ["Python", "JavaScript"],
+      "department": "Engineering"
+    },
+    "include_contact_info": true,
+    "include_social_profiles": true
+  },
+  "key_mapping": "",
+  "created_at": "timestamp",
+  "updated_at": "timestamp",
+  "deleted_at": null
+}
+```
+
+**Standalone Request Template (AI Company Researcher):**
+```json
+{
+  "id": "uuid",
+  "factor_id": "company-size-guardrail-id",
+  "source_id": "ai-company-researcher-id",
+  "setup": {
+    "query": "AI companies in San Francisco with 50-200 employees",
+    "industry_focus": "technology",
+    "funding_stage": "Series A",
+    "include_financials": true
+  },
+  "key_mapping": "",
+  "created_at": "timestamp",
+  "updated_at": "timestamp",
+  "deleted_at": null
+}
+```
+
+**Step 6: Factor-Source Validation**
+
+**Purpose:** Ensure all `factor_source` records are properly structured and reference valid IDs
+
+**Validation Requirements:**
+- **ID Validation:** All `factor_id` and `source_id` must exist in respective tables
+- **Setup Validation:** `setup` JSON must contain realistic request parameters
+- **Key Mapping:** `key_mapping` field must be empty string
+- **Referential Integrity:** Factor and source must be compatible (same object type)
+- **Template Consistency:** Request templates must match source API patterns from Phase 4
+
+**Step 7: Integration with Simulators**
+
+**Purpose:** Ensure `factor_source` records work seamlessly with source simulators
+
+**Integration Requirements:**
+- **Request Compatibility:** `factor_source.setup` must generate valid requests for simulators
+- **Parameter Mapping:** Request parameters must map to simulator input fields
+- **Response Handling:** Simulator responses must be processable by backend ETL
+- **Error Handling:** Invalid `factor_source.setup` must generate appropriate error responses
+- **Testing:** All `factor_source` records must be testable with corresponding simulators
+
+**Total Factor-Source Records: 218**
+- **Stackable Sources:** 104 records (8 sources × 13 groups each)
+- **Standalone Sources:** 114 records (3 sources × individual factors)
+
+This comprehensive factor-source mapping system provides realistic request templates that enable proper API communication with source simulators while maintaining data consistency and referential integrity across the entire system.
