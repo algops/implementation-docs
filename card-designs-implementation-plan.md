@@ -7,24 +7,103 @@
 - [ ] **NO direct usage of `components/ui/` folder components**
 
 ## Overview
-Implement specialized cards that display real-time database information, status, and key metrics for activities, workflows, sources, objects, and factors using the existing card components.
+Enhance existing card components to better display JSON data from your data files. You already have a solid card system with `BaseCard` and specialized cards for different entity types.
 
-## Phase 1: Database-Focused Card Architecture
+## Current Card Components
+- **BaseCard**: Universal card with title, description, state, and interactive features
+- **ActivityCard**: Displays activity information with type badge
+- **SourceCard**: Shows source information with type badge
+- **WorkflowCard**: Displays workflow with last updated timestamp
+- **ObjectTypeCard**: Shows object type information
+- **UsecaseCard**: Displays use case information
+- **GuardrailCard**: Shows guardrail information
+- **DashboardCard**: Dashboard-specific card
+- **CreateCard**: Card for creating new items
+- **AddActivityCard**: Card for adding activities
+- **AddSetupCard**: Card for adding setup
 
-### 1.1 Card System Architecture
-- **Base Card**: Foundation card component with database data integration
-- **Specialized Cards**: Activity, workflow, source, object, and factor cards
-- **Data Display**: Real-time status, metrics, and configuration information
-- **Database Integration**: Direct connection to database tables and JSON fields
+## Phase 1: Enhance Existing Cards for JSON Data
 
-### 1.2 Core Components Structure
-- **BaseCard**: Universal card wrapper with database data display capabilities
-- **ActivityCard**: Display activity status and performance metrics
-- **WorkflowCard**: Show workflow progress and phase information
-- **SourceCard**: Display source health and configuration
-- **ObjectTypeCard**: Show object coverage and data quality
-- **UseCaseCard**: Display use case rules and validation
-- **GuardrailCard**: Show guardrail rules and thresholds
+### 1.1 Enhance BaseCard
+- **Add Metrics Display**: Show key metrics from JSON data
+- **Add Status Indicators**: Visual status representation
+- **Add Action Buttons**: Contextual actions based on data
+- **Improve State Handling**: Better visual states (active, warning, error)
+
+### 1.2 Enhance Specialized Cards with Data Options
+
+#### ActivityCard
+**Data Source**: `activities.json`
+**Display Options**:
+1. **Activity Name** - `name`
+2. **Description** - `description`
+3. **Type Badge** - `type` (with BaseBadge)
+4. **Status** - `status` (active, inactive, etc.)
+5. **Owner Organization** - `owner_org_name`
+6. **Owner Avatar** - `owner_avatar` (if available)
+7. **Last Used Component** - `last_used_at` (relative time with opacity)
+8. **Stats Overview Component** - `total_requests`, `successful_requests`, `failed_requests`, `success_rate`
+
+#### SourceCard
+**Data Source**: `sources.json`
+**Display Options**:
+1. **Source Name** - `name`
+2. **Description** - `description`
+3. **Type Badge** - `source_type` (with BaseBadge)
+4. **Status** - `status` (active, inactive, etc.)
+5. **Owner Organization** - `owner_org_name`
+6. **Owner Avatar** - `owner_avatar` (if available)
+7. **Last Used Component** - `last_used_at` (relative time with opacity)
+8. **Stats Overview Component** - `total_runs`, `successful_runs`, `failed_runs`, `success_rate`
+
+#### WorkflowCard
+**Data Source**: `workflows.json`
+**Display Options**:
+1. **Workflow Name** - `name`
+2. **Description** - `description`
+3. **Type Badge** - `type` (with BaseBadge)
+4. **Status** - `status` (active, inactive, etc.)
+5. **Owner Organization** - `owner_org_name`
+6. **Owner Avatar** - `owner_avatar` (if available)
+7. **Last Used Component** - `last_used_at` (relative time with opacity)
+8. **Stats Overview Component** - `total_executions`, `successful_executions`, `failed_executions`, `success_rate`
+
+#### ObjectTypeCard
+**Data Source**: `object-types.json`
+**Display Options**:
+1. **Object Type Name** - `name`
+2. **Description** - `description`
+7. **Stats Overview Component** - `object_count` (success), `datapoint_count` (default), `value_count` (success)
+
+#### UsecaseCard
+**Data Source**: `factors.json` (filtered by `type: "use-case"`)
+**Display Options**:
+1. **Use Case Name** - `name`
+2. **Description** - `description`
+3. **Factor Type Badge** - `factor_type` (frequency, boolean, numeric, text) with color coding
+4. **Object Type Badge** - `object_type_id` (resolved name) with secondary variant
+5. **Datapoint Badge** - `datapoint_id` (resolved name) with outline variant
+
+
+#### GuardrailCard
+**Data Source**: `factors.json` (filtered by `type: "guardrail"`)
+**Display Options**:
+1. **Guardrail Name** - `name`
+2. **Description** - `description`
+3. **Factor Type Badge** - `factor_type` (frequency, boolean, numeric, text) with color coding
+4. **Object Type Badge** - `object_type_id` (resolved name) with secondary variant
+5. **Datapoint Badge** - `datapoint_id` (resolved name) with outline variant
+6. **Operator Badge** - `operator` (regex, starts_with, etc.) with warning variant
+7. **Value Badge** - `value` (validation criteria) with muted variant
+
+#### DashboardCard
+**Data Source**: `dashboard.json`, `dashboard-full.json`
+**Display Options**:
+1. **Title** - `title`
+2. **Description** - `description`
+3. **Value** - `value` (formatted number/string)
+5. **Trend** - `trend` (up, down, stable)
+6. **Change** - `change` (percentage change)
 
 ### 1.3 Data Display Design
 - **Real-time Status**: Current state from activity_request.status, run_queue.status
@@ -181,18 +260,20 @@ Implement specialized cards that display real-time database information, status,
 ## File Changes Required
 
 ### Modified Files
-- `components/cards/activity-card.tsx` - Update to display database metrics
-- `components/cards/workflow-card.tsx` - Update to show workflow progress
-- `components/cards/source-card.tsx` - Update to display source health
+- `components/cards/activity-card.tsx` - Enhanced with stats overview, status, owner info, last used
+- `components/cards/workflow-card.tsx` - Enhanced with stats overview, status, owner info, last used
+- `components/cards/source-card.tsx` - Enhanced with stats overview, status, owner info, last used
+- `components/cards/usecase-card.tsx` - Enhanced with factor definition badges (type, object type, datapoint, operator, value)
+- `components/cards/guardrail-card.tsx` - Enhanced with factor definition badges (type, object type, datapoint, operator, value)
 - `components/cards/objecttype-card.tsx` - Update to show data coverage
-- `components/cards/usecase-card.tsx` - Update to display use case rules
-- `components/cards/guardrail-card.tsx` - Update to show guardrail rules
-- `components/cards/base-card.tsx` - Enhance with database data capabilities
+- `components/cards/base-card.tsx` - Keep name and description only (no changes)
 - `components/cards/index.ts` - Ensure all existing cards are exported
 
-### No New Files Required
-- All specialized card components already exist
-- Focus on updating existing components with database integration
+### New Files
+- `components/others/stats-overview.tsx` - Statistics overview component with progress bar
+
+### Enhanced Components
+- `components/others/last-used.tsx` - Enhanced with opacity based on time intervals (minutes: 100%, hours: 90%, days: 80%, weeks: 70%, months: 60%)
 
 ## Testing Checklist
 

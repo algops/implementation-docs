@@ -7,24 +7,57 @@
 - [ ] **NO direct usage of `components/ui/` folder components**
 
 ## Overview
-Implement specialized charts that visualize organization performance data, costs, usage patterns, and operational metrics from the org table and related database entities using the existing chart components.
+Enhance existing chart components to better display JSON data from your data files. You already have working chart components that can consume data directly.
 
-## Phase 1: Database-Focused Chart Architecture
+## Current Chart Components
+- **UsageChart**: Bar chart for usage data with categories and time periods
+- **CostChart**: Pie chart for cost distribution with currency formatting
 
-### 1.1 Chart System Architecture
-- **Cost Visualization**: Organization cost tracking from org table metrics
-- **Usage Analytics**: API usage and processing volume from org table
-- **Performance Metrics**: Success rates and operational efficiency
-- **Operational Insights**: Queue status and health indicators
+## Phase 1: Enhance Existing Charts for JSON Data
 
-### 1.2 Core Components Structure
-- **BaseChart**: Universal chart wrapper with org table data integration
-- **CostChart**: Cost tracking and budget analysis from org metrics
-- **UsageChart**: Usage patterns and volume analysis from org data
-- **PerformanceChart**: Performance metrics and trends
-- **OperationalChart**: Operational status and health metrics
+### 1.1 Enhance UsageChart
+- **Dashboard Data**: Display usage data from dashboard.json and dashboard-full.json
+- **Time Period Support**: Handle different time periods (Week, Month, Quarter, Year)
+- **Dynamic Categories**: Support different categories from JSON data
+- **Loading States**: Better loading and error handling
 
-### 1.3 Data Visualization Design
+### 1.2 Enhance CostChart
+- **Dashboard Data**: Display cost data from dashboard.json and dashboard-full.json
+- **Currency Support**: Handle different currencies from JSON
+- **Time Period Support**: Show costs for different time periods
+- **Interactive Features**: Add hover effects and click handlers
+
+### 1.3 Add New Chart Components
+
+#### HealthChart
+**Data Source**: `sources.json`, `activities.json`, `workflows.json`
+**Display Options**:
+1. **Success Rate Trends** - `success_rate` over time
+2. **Error Rate Trends** - `failed_runs / total_runs` over time
+3. **Response Time Trends** - `average_run_duration` over time
+4. **Queue Health** - `max_concurrent_runs` vs active runs
+5. **System Health Score** - Composite health metric
+6. **Uptime Percentage** - System availability over time
+7. **Performance Degradation** - Performance decline indicators
+8. **Resource Utilization** - CPU, memory, API usage
+9. **Alert Frequency** - Number of alerts over time
+10. **Recovery Time** - Time to recover from failures
+
+#### StatsChart
+**Data Source**: `dashboard.json`, `dashboard-full.json`, `datapoints.json`
+**Display Options**:
+1. **Total Objects** - `object_count` over time
+2. **Total Datapoints** - `datapoint_count` over time
+3. **API Requests** - `request_count` over time
+4. **Run Executions** - `run_count` over time
+5. **Data Processing Volume** - Bytes processed over time
+6. **User Activity** - Active users over time
+7. **Feature Usage** - Feature adoption rates
+8. **Growth Metrics** - Month-over-month growth
+9. **Efficiency Metrics** - Success rate improvements
+10. **Cost Efficiency** - Cost per object processed
+
+### 1.4 Data Visualization Design
 - **Time Series Data**: Historical trends from org table metrics
 - **Comparative Analysis**: Current vs previous periods
 - **Threshold Tracking**: Usage limits and performance targets

@@ -17,12 +17,72 @@ Implement specialized hovercards that provide contextual database information, r
 - **Configuration Hovercards**: JSON template details and parameter information
 - **Alert Hovercards**: Warning and error information from run_queue
 
-### 1.2 Core Components Structure
-- **BaseHovercard**: Universal hovercard wrapper with database data
-- **ValueHovercard**: Display value details and metadata
-- **ProgressHovercard**: Show progress and completion status
-- **MappingHovercard**: Display mapping and relationship information
-- **CustomHovercard**: Flexible hovercard for specific use cases
+### 1.2 Core Components Structure with Data Options
+
+#### BaseHovercard
+**Data Source**: Universal wrapper for all hovercards
+**Display Options**:
+1. **Content Rendering** - Flexible content display system
+2. **Positioning** - Dynamic positioning based on screen space
+3. **Animation** - Smooth entrance/exit animations
+4. **Accessibility** - ARIA labels and keyboard support
+5. **Responsive Design** - Adapt to different screen sizes
+
+#### ValueHovercard
+**Data Source**: `datapoints.json`, `object-types.json`
+**Display Options**:
+1. **Value Details** - `value` field with formatting
+2. **Confidence Score** - `confidence` percentage
+3. **Status Code** - `status_code` with color coding
+4. **Object Type** - `object_type_id` (resolved name)
+5. **Datapoint** - `datapoint_id` (resolved name)
+6. **Source Information** - Source that generated the value
+7. **Timestamp** - `created_at` and `updated_at`
+8. **Validation Status** - Whether value passed validation
+9. **Related Values** - Other values for same object
+10. **History** - Value change history over time
+
+#### ProgressHovercard
+**Data Source**: `activities.json`, `sources.json`, `workflows.json`
+**Display Options**:
+1. **Current Status** - `status` with visual indicator
+2. **Progress Percentage** - Completion percentage
+3. **Time Elapsed** - Time since start
+4. **Estimated Time Remaining** - Based on average duration
+5. **Steps Completed** - Number of completed steps
+6. **Total Steps** - Total number of steps
+7. **Current Phase** - Current workflow phase
+8. **Next Action** - What happens next
+9. **Error Information** - Any errors encountered
+10. **Performance Metrics** - Success rate, average duration
+
+#### MappingHovercard
+**Data Source**: `sources.json`, `factors.json`
+**Display Options**:
+1. **Mapping Type** - Source mapping, factor mapping, etc.
+2. **Source Information** - Source name and type
+3. **Target Information** - What's being mapped to
+4. **Mapping Rules** - JSON template structure
+5. **Variable Placeholders** - `<<$run_setup>>`, `<<$max_objects>>`
+6. **Validation Rules** - Mapping validation criteria
+7. **Usage Statistics** - How often mapping is used
+8. **Last Updated** - When mapping was last modified
+9. **Dependencies** - Other mappings this depends on
+10. **Test Results** - Recent mapping test results
+
+#### CustomHovercard
+**Data Source**: Context-dependent
+**Display Options**:
+1. **Dynamic Content** - Content based on hover target
+2. **Contextual Data** - Relevant data for specific context
+3. **Interactive Elements** - Buttons, links, forms
+4. **Real-time Updates** - Live data refresh
+5. **Custom Styling** - Context-specific styling
+6. **Action Buttons** - Quick actions available
+7. **Related Information** - Links to related data
+8. **Status Indicators** - Visual status representation
+9. **Performance Metrics** - Relevant performance data
+10. **Configuration Options** - Settings and preferences
 
 ### 1.3 Data Display Design
 - **Contextual Information**: Relevant data based on hover target from database

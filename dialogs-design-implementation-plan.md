@@ -7,27 +7,163 @@
 - [ ] **NO direct usage of `components/ui/` folder components**
 
 ## Overview
-Implement a comprehensive dialog system that provides consistent, accessible, and user-friendly modal interfaces with smooth animations, proper focus management, and responsive design across all application sections.
+Enhance existing dialog components to better work with JSON data from your data files. You already have a comprehensive dialog system with many specialized dialogs.
 
-## Phase 1: Architecture & Core Structure
+## Current Dialog Components
+- **MultistepDialog**: Multi-step workflow dialogs with progress tracking
+- **CreateSourceDialog**: Dialog for creating new sources
+- **DeployActivityDialog**: Dialog for deploying activities
+- **DeployWorkflowDialog**: Dialog for deploying workflows
+- **CreateOrganizationDialog**: Dialog for creating organizations
+- **AddSourceDialog**: Dialog for adding sources
+- **SetupDialog**: General setup dialog
+- **LoginDialog/SignUpDialog**: Authentication dialogs
+- **ConfirmDialog/ConfirmationDialog**: Confirmation dialogs
+- **UpsellDialog**: Upsell and promotion dialogs
+- **ExploreValueDialog**: Value exploration dialog
+- **StatusTranslationDialog**: Status translation dialog
+- **SetupGuardrailsDialog**: Guardrail setup dialog
+- **CreateGuardrailFactorDialog**: Guardrail factor creation
+- **CreateUsecaseFactorDialog**: Use case factor creation
 
-### 1.1 Dialog System Architecture
-- **Base Dialog**: Foundation dialog component with core functionality
-- **Dialog Types**: Different dialog variants for various use cases
-- **Focus Management**: Proper focus trapping and restoration
-- **Backdrop System**: Modal backdrop and click-outside handling
+## Phase 1: Enhance Existing Dialogs for JSON Data
 
-### 1.2 Core Components Structure
-- **BaseDialog**: Universal dialog wrapper with common features
-- **DialogHeader**: Dialog title and close button
-- **DialogContent**: Main dialog content area
-- **DialogFooter**: Action buttons and secondary content
+### 1.1 Enhance MultistepDialog
+- **JSON Data Support**: Handle complex JSON data in multi-step flows
+- **Dynamic Steps**: Generate steps based on JSON data structure
+- **Data Validation**: Validate JSON data at each step
+- **Progress Tracking**: Better progress indication for data processing
 
-### 1.3 Data Flow Design
-- **Dialog State**: Open/close state management
-- **Event Handling**: Dialog events and callbacks
-- **Content Rendering**: Dynamic content based on props
-- **Accessibility**: ARIA attributes and keyboard navigation
+### 1.2 Enhance Creation Dialogs with Data Options
+
+#### CreateSourceDialog
+**Data Source**: `sources.json`
+**Dialog Steps**:
+1. **Source Configuration** - JSON/YAML input for source setup
+2. **Template Validation** - Validate run_request_template structure
+3. **Delivery Setup** - Configure delivery_request_template
+4. **Status Check Setup** - Configure status_request_template
+5. **Testing** - Test source configuration with sample data
+6. **Deployment** - Deploy source to production
+
+#### DeployActivityDialog
+**Data Source**: `activities.json`
+**Dialog Steps**:
+1. **Activity Selection** - Choose from available activities
+2. **Configuration** - Configure activity parameters
+3. **Source Mapping** - Map activity to data sources
+4. **Validation** - Validate activity configuration
+5. **Deployment** - Deploy activity to production
+6. **Monitoring** - Set up monitoring and alerts
+
+#### DeployWorkflowDialog
+**Data Source**: `workflows.json`
+**Dialog Steps**:
+1. **Workflow Selection** - Choose from available workflows
+2. **Phase Configuration** - Configure workflow phases
+3. **Activity Mapping** - Map activities to phases
+4. **Dependencies** - Set up activity dependencies
+5. **Validation** - Validate workflow configuration
+6. **Deployment** - Deploy workflow to production
+
+#### CreateOrganizationDialog
+**Data Source**: `navigation.json`
+**Dialog Steps**:
+1. **Organization Details** - Name, description, contact info
+2. **User Management** - Add users and set permissions
+3. **Settings Configuration** - Configure org settings
+4. **Integration Setup** - Set up external integrations
+5. **Validation** - Validate organization setup
+6. **Creation** - Create organization
+
+### 1.3 Enhance Configuration Dialogs with Data Options
+
+#### SetupGuardrailsDialog
+**Data Source**: `factors.json` (guardrail type)
+**Dialog Steps**:
+1. **Guardrail Selection** - Choose guardrails to configure
+2. **Rule Definition** - Define validation rules
+3. **Threshold Settings** - Set validation thresholds
+4. **Source Mapping** - Map guardrails to sources
+5. **Testing** - Test guardrail rules
+6. **Activation** - Activate guardrails
+
+#### CreateGuardrailFactorDialog
+**Data Source**: `factors.json`
+**Dialog Fields**:
+1. **Factor Name** - `name` (string)
+2. **Description** - `description` (string)
+3. **Factor Type** - `factor_type` (boolean, regex, etc.)
+4. **Object Type** - `object_type_id` (selection)
+5. **Datapoint** - `datapoint_id` (selection)
+6. **Operator** - `operator` (regex, starts_with, etc.)
+7. **Value** - `value` (validation criteria)
+8. **Active Status** - `isActive` (boolean)
+
+#### CreateUsecaseFactorDialog
+**Data Source**: `factors.json`
+**Dialog Fields**:
+1. **Use Case Name** - `name` (string)
+2. **Description** - `description` (string)
+3. **Factor Type** - `factor_type` (frequency, reason, similarity)
+4. **Object Type** - `object_type_id` (selection)
+5. **Datapoint** - `datapoint_id` (selection)
+6. **Operator** - `operator` (regex, starts_with, etc.)
+7. **Value** - `value` (validation criteria)
+8. **Active Status** - `isActive` (boolean)
+
+#### StatusTranslationDialog
+**Data Source**: `activities.json`, `sources.json`, `workflows.json`
+**Dialog Fields**:
+1. **Status Mapping** - Map external statuses to internal statuses
+2. **Status Categories** - Group statuses by category
+3. **Status Colors** - Assign colors to status types
+4. **Status Icons** - Assign icons to status types
+5. **Status Messages** - Custom status messages
+6. **Status Transitions** - Define valid status transitions
+7. **Error Handling** - Configure error status handling
+8. **Notification Rules** - Set up status-based notifications
+
+### 1.4 Enhance Utility Dialogs with Data Options
+
+#### LoginDialog/SignUpDialog
+**Data Source**: `navigation.json`
+**Dialog Fields**:
+1. **Email/Username** - User identifier
+2. **Password** - User password
+3. **Remember Me** - Session persistence
+4. **Two-Factor Auth** - 2FA setup/verification
+5. **Organization Selection** - Choose organization
+6. **Terms Acceptance** - Accept terms and conditions
+
+#### ConfirmDialog/ConfirmationDialog
+**Data Source**: Context-dependent
+**Dialog Fields**:
+1. **Confirmation Message** - Action description
+2. **Warning Level** - Info, warning, danger
+3. **Action Buttons** - Confirm, cancel, custom actions
+4. **Additional Info** - Contextual information
+5. **Impact Assessment** - Show what will be affected
+
+#### UpsellDialog
+**Data Source**: `dashboard.json`, `navigation.json`
+**Dialog Fields**:
+1. **Feature Description** - What's being offered
+2. **Benefits List** - Key benefits and value props
+3. **Pricing Information** - Cost and billing details
+4. **Trial Options** - Free trial or demo options
+5. **Upgrade Path** - How to upgrade
+6. **Contact Information** - Sales contact details
+
+#### ExploreValueDialog
+**Data Source**: `dashboard.json`, `datapoints.json`
+**Dialog Fields**:
+1. **Value Overview** - Current value metrics
+2. **Value Breakdown** - Detailed value analysis
+3. **ROI Calculation** - Return on investment
+4. **Usage Statistics** - How value is being generated
+5. **Recommendations** - How to increase value
+6. **Comparison Data** - Compare with benchmarks
 
 ## Phase 2: Components & Features
 

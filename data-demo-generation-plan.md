@@ -1684,19 +1684,110 @@ Based on analysis of the database structure, here's the strategic plan to popula
 
 **Target Structure:**
 ```
-data/simulators/
-├── linkedin-people-api/           # LinkedIn People Dataset simulator
-├── ai-company-researcher-api/     # AI Company Researcher simulator
-├── automotive-database-api/       # Automotive Database simulator
-├── e-commerce-scraper-api/        # E-commerce Scraper simulator
-├── esg-agent-api/                 # ESG Agent simulator
-├── event-management-api/          # Event Management simulator
-├── job-market-scraper-api/        # Job Market Scraper simulator
-├── real-estate-api/              # Real Estate API simulator
-├── ml-model-trainer-api/          # ML Model Trainer simulator
-├── ml-model-inference-api/        # ML Model Inference simulator
-├── fireworks-finetune-api/        # Fireworks Fine-tuning simulator
-└── shared/                        # Common utilities and logging
+data/sources/
+├── linkedin-people-dataset/
+│   ├── linkedin-people-dataset.json    # Source detail
+│   ├── people.json                     # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── ai-company-researcher/
+│   ├── ai-company-researcher.json     # Source detail
+│   ├── companies.json                  # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── real-estate-api/
+│   ├── real-estate-api.json           # Source detail
+│   ├── properties.json                 # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── esg-agent/
+│   ├── esg-agent.json                 # Source detail
+│   ├── documents.json                  # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── job-market-scraper/
+│   ├── job-market-scraper.json        # Source detail
+│   ├── jobposts.json                  # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── e-commerce-scraper/
+│   ├── e-commerce-scraper.json        # Source detail
+│   ├── products.json                  # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── event-management/
+│   ├── event-management.json          # Source detail
+│   ├── events.json                    # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── automotive-database/
+│   ├── automotive-database.json       # Source detail
+│   ├── vehicles.json                  # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── ml-model-trainer/
+│   ├── ml-model-trainer.json          # Source detail
+│   ├── training-jobs.json             # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── ml-model-inference/
+│   ├── ml-model-inference.json        # Source detail
+│   ├── inference-requests.json        # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+├── fireworks-finetune/
+│   ├── fireworks-finetune.json        # Source detail
+│   ├── finetune-jobs.json             # Sample data
+│   ├── mappings.json                   # Field mappings
+│   └── simulator/                      # 🆕 Simulator files
+│       ├── package.json
+│       ├── server.js
+│       ├── data-generators.js
+│       └── README.md
+└── shared/                            # Common utilities and logging
+    ├── data-generators/
+    ├── validation-utils/
+    └── logging/
 ```
 
 ## Step 1: Source Configuration Updates
@@ -1990,6 +2081,7 @@ data/simulators/
 ## Step 2: Individual Simulator Specifications
 
 ### 1. LinkedIn People Dataset Simulator
+**Location:** `data/sources/linkedin-people-dataset/simulator/`
 
 **Purpose:** Generate realistic person profiles with professional information matching the LinkedIn People Dataset source schema
 
@@ -2003,6 +2095,7 @@ data/simulators/
 **Expected Record Counts:** 50-500 people per run, varying by request parameters
 
 ### 2. AI Company Researcher Simulator
+**Location:** `data/sources/ai-company-researcher/simulator/`
 
 **Purpose:** Generate company data matching the AI Company Researcher source schema
 
@@ -2017,6 +2110,7 @@ data/simulators/
 **Expected Record Counts:** 20-200 companies per run, varying by industry filters
 
 ### 3. Automotive Database Simulator
+**Location:** `data/sources/automotive-database/simulator/`
 
 **Purpose:** Generate vehicle records matching the Automotive Database source schema
 
@@ -2030,6 +2124,7 @@ data/simulators/
 **Expected Record Counts:** 100-1000 vehicles per run, varying by make/model filters
 
 ### 4. E-commerce Scraper Simulator
+**Location:** `data/sources/e-commerce-scraper/simulator/`
 
 **Purpose:** Generate product catalog data matching the E-commerce Scraper source schema
 
@@ -2043,6 +2138,7 @@ data/simulators/
 **Expected Record Counts:** 200-2000 products per run, varying by category filters
 
 ### 5. Real Estate API Simulator
+**Location:** `data/sources/real-estate-api/simulator/`
 
 **Purpose:** Generate property listings matching the Real Estate API source schema
 
@@ -2056,6 +2152,7 @@ data/simulators/
 **Expected Record Counts:** 50-500 properties per run, varying by location filters
 
 ### 6. Job Market Scraper Simulator
+**Location:** `data/sources/job-market-scraper/simulator/`
 
 **Purpose:** Generate job postings matching the Job Market Scraper source schema
 
@@ -2069,6 +2166,7 @@ data/simulators/
 **Expected Record Counts:** 100-1000 job postings per run, varying by location/industry filters
 
 ### 7. ESG Agent Simulator
+**Location:** `data/sources/esg-agent/simulator/`
 
 **Purpose:** Generate document records matching the ESG Agent source schema
 
@@ -2082,6 +2180,7 @@ data/simulators/
 **Expected Record Counts:** 30-300 documents per run, varying by category filters
 
 ### 8. Event Management Simulator
+**Location:** `data/sources/event-management/simulator/`
 
 **Purpose:** Generate event data matching the Event Management source schema
 
@@ -2093,6 +2192,48 @@ data/simulators/
 **Object Type Mapping:** `event` object type with datapoints: name, date, location, description, capacity, price, organizer, status
 
 **Expected Record Counts:** 25-250 events per run, varying by date range filters
+
+### 9. ML Model Trainer Simulator
+**Location:** `data/sources/ml-model-trainer/simulator/`
+
+**Purpose:** Generate ML training job data matching the ML Model Trainer source schema
+
+**Data Generation Patterns:**
+- **Training Jobs:** Experiment IDs, run names, training data configurations, model parameters
+- **ML Metadata:** Model types, hyperparameters, training status, performance metrics
+- **Job Management:** Job IDs, status tracking, completion timestamps, error handling
+
+**Object Type Mapping:** `company` object type with datapoints: name, website, industry, employee_count, founded_year, revenue, funding, currency, city, state, country, technologies, status
+
+**Expected Record Counts:** 5-50 training jobs per run, varying by experiment complexity
+
+### 10. ML Model Inference Simulator
+**Location:** `data/sources/ml-model-inference/simulator/`
+
+**Purpose:** Generate ML inference request data matching the ML Model Inference source schema
+
+**Data Generation Patterns:**
+- **Inference Requests:** Model IDs, input data, prediction parameters, confidence scores
+- **Prediction Data:** Model outputs, prediction results, accuracy metrics, response times
+- **Request Management:** Request IDs, status tracking, processing timestamps, error handling
+
+**Object Type Mapping:** `company` object type with datapoints: name, website, industry, employee_count, founded_year, revenue, funding, currency, city, state, country, technologies, status
+
+**Expected Record Counts:** 10-100 inference requests per run, varying by model complexity
+
+### 11. Fireworks Fine-tuning Simulator
+**Location:** `data/sources/fireworks-finetune/simulator/`
+
+**Purpose:** Generate fine-tuning job data matching the Fireworks Fine-tuning source schema
+
+**Data Generation Patterns:**
+- **Fine-tuning Jobs:** Base model IDs, training data, hyperparameters, job status
+- **LLM Metadata:** Model versions, training progress, performance improvements, completion status
+- **Job Management:** Job IDs, status tracking, training duration, model artifacts
+
+**Object Type Mapping:** `company` object type with datapoints: name, website, industry, employee_count, founded_year, revenue, funding, currency, city, state, country, technologies, status
+
+**Expected Record Counts:** 3-30 fine-tuning jobs per run, varying by model size and complexity
 
 ## Step 1: API Endpoint Simulation
 
@@ -2419,23 +2560,27 @@ data/simulators/
 - **Activity Integration:** Link generated data to activity runs and workflow executions
 
 **Configuration Management (Per Simulator):**
-- **Port Configuration:** Each simulator runs on unique port (3001-3008)
+- **Port Configuration:** Each simulator runs on unique port (3001-3011)
 - **Base API Paths:** Match exact URL patterns from source templates
 - **Data Type Support:** Configure supported object types and datapoints per simulator
 - **Record Limits:** Set maximum records per run based on source configuration
 - **Response Delays:** Configure realistic response times matching source timeouts
 - **Error Rates:** Set configurable error injection rates for testing
 - **Authentication:** Configure auth keys matching source configurations
+- **Folder Structure:** Each simulator located in `data/sources/{source-name}/simulator/`
 
 **Simulator-Specific Configurations:**
-- **LinkedIn Simulator:** Port 3001, supports person object type, max 500 records, 45s timeout
-- **Real Estate Simulator:** Port 3002, supports property object type, max 300 records, 78s timeout
-- **AI Researcher Simulator:** Port 3003, supports company object type, max 100 records, 95s timeout
-- **ESG Agent Simulator:** Port 3004, supports document object type, max 50 records, 300s timeout
-- **Job Scraper Simulator:** Port 3005, supports jobpost object type, max 500 records, 420s timeout
-- **E-commerce Simulator:** Port 3006, supports product object type, max 1000 records, 156s timeout
-- **Event Management Simulator:** Port 3007, supports event object type, max 250 records, 210s timeout
-- **Automotive Simulator:** Port 3008, supports vehicle object type, max 200 records, 35s timeout
+- **LinkedIn Simulator:** `data/sources/linkedin-people-dataset/simulator/`, Port 3001, supports person object type, max 500 records, 45s timeout
+- **Real Estate Simulator:** `data/sources/real-estate-api/simulator/`, Port 3002, supports property object type, max 300 records, 78s timeout
+- **AI Researcher Simulator:** `data/sources/ai-company-researcher/simulator/`, Port 3003, supports company object type, max 100 records, 95s timeout
+- **ESG Agent Simulator:** `data/sources/esg-agent/simulator/`, Port 3004, supports document object type, max 50 records, 300s timeout
+- **Job Scraper Simulator:** `data/sources/job-market-scraper/simulator/`, Port 3005, supports jobpost object type, max 500 records, 420s timeout
+- **E-commerce Simulator:** `data/sources/e-commerce-scraper/simulator/`, Port 3006, supports product object type, max 1000 records, 156s timeout
+- **Event Management Simulator:** `data/sources/event-management/simulator/`, Port 3007, supports event object type, max 250 records, 210s timeout
+- **Automotive Simulator:** `data/sources/automotive-database/simulator/`, Port 3008, supports vehicle object type, max 200 records, 35s timeout
+- **ML Model Trainer Simulator:** `data/sources/ml-model-trainer/simulator/`, Port 3009, supports company object type, max 50 records, 1800s timeout
+- **ML Model Inference Simulator:** `data/sources/ml-model-inference/simulator/`, Port 3010, supports company object type, max 100 records, 300s timeout
+- **Fireworks Fine-tuning Simulator:** `data/sources/fireworks-finetune/simulator/`, Port 3011, supports company object type, max 30 records, 3600s timeout
 
 ## Step 6: Testing Scenarios
 
