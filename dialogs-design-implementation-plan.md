@@ -17,7 +17,7 @@ Enhance existing dialog components to better work with JSON data from your data 
 - **CreateOrganizationDialog**: Dialog for creating organizations
 - **AddSourceDialog**: Dialog for adding sources
 - **SetupDialog**: General setup dialog
-- **LoginDialog/SignUpDialog**: Authentication dialogs
+- **LoginDialog/SignUpDialog**: Authentication dialogs 
 - **ConfirmDialog/ConfirmationDialog**: Confirmation dialogs
 - **UpsellDialog**: Upsell and promotion dialogs
 - **ExploreValueDialog**: Value exploration dialog
