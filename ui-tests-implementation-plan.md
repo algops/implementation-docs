@@ -46,7 +46,7 @@ Implement a comprehensive testing strategy for all UI components using Playwrigh
 - **JSON**: 11 JSON processing and visualization components
   - **Core JSON**: JsonRenderer, JsonNode, JsonNodeStatus, JsonExplorer
   - **Mappers**: JsonResponseMapper, JsonRequestMapper, JsonResultMapper
-  - **Interface**: JsonUpload, JsonSelector, JsonPath, ManageJsonsDialog, PathsExpandSelector
+  - **Interface**: JsonSelector, JsonPath, ManageJsonsDialog, PathsExpandSelector
 - **Dialogs**: 25 modal dialog components
   - **Setup Dialogs**: SetupDialog, CollaborationDialog, LoginDialog, LogoutDialog, SignUpDialog
   - **Creation Dialogs**: CreateGuardrailFactorDialog, CreateUsecaseFactorDialog, SetupGuardrailsDialog
@@ -183,7 +183,7 @@ Implement a comprehensive testing strategy for all UI components using Playwrigh
 **JSON Components (11 components)**
 - **Core JSON**: JsonRenderer, JsonNode, JsonNodeStatus, JsonExplorer
 - **Mappers**: JsonResponseMapper, JsonRequestMapper, JsonResultMapper
-- **Interface**: JsonUpload, JsonSelector, JsonPath, ManageJsonsDialog, PathsExpandSelector
+- **Interface**: JsonSelector, JsonPath, ManageJsonsDialog, PathsExpandSelector
 
 ### 2.3 React Testing Library
 
@@ -462,7 +462,7 @@ Implement a comprehensive testing strategy for all UI components using Playwrigh
 #### **JSON Components (11 components)**
 - [ ] **Core JSON**: JsonRenderer, JsonNode, JsonNodeStatus, JsonExplorer
 - [ ] **Mappers**: JsonResponseMapper, JsonRequestMapper, JsonResultMapper
-- [ ] **Interface**: JsonUpload, JsonSelector, JsonPath, ManageJsonsDialog, PathsExpandSelector
+- [ ] **Interface**: JsonSelector, JsonPath, ManageJsonsDialog, PathsExpandSelector
 
 #### **Layout & Navigation (13 components)**
 - [ ] **Core Layout**: MainLayout, Layout, Header, ContentWrapper, PageContent, PageControls, Grid

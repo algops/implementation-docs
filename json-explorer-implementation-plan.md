@@ -2804,7 +2804,7 @@ interface PathsExpandSelectorProps {
 - **Upload progress** indication
 
 **3. Upload Section (Bottom)**
-- **Small JsonUpload component** below the list
+- **Small FormDragDrop component** below the list
 - **Consistent styling** with existing upload component
 - **File input** for manual selection
 
