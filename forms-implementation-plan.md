@@ -1041,4 +1041,660 @@ Accordion receives type prop → Renders SourceBodyForm with appropriate mapper 
 - Status indicators for each section
 - Clear visual separation
 
+## Phase 9: SourceBodyUpload Component Refactoring and Form Integration
 
+### Overview
+Refactor the existing `SourceBodyForm` component (renamed to `SourceBodyUpload`) to be a pure file upload component that only handles JSON file upload and text input, removing all mapper integration. Move mapper orchestration to the parent form components (`RunRequestForm`, `StatusCheckForm`, `DeliveryForm`).
+
+### Executive Summary
+
+**Goal**: Transform `SourceBodyForm` into a focused `SourceBodyUpload` component that only handles file upload and text input, with parent forms orchestrating mapper integration.
+
+**Solution**: 
+1. **Simplify SourceBodyUpload**: Remove all mapper components, keep only file upload + text input
+2. **Add Data Callbacks**: Provide `onJsonDataChange` callback to pass data to parent forms
+3. **Update Form Components**: Add mapper orchestration logic to each form component
+4. **Fix Import References**: Update all imports from `source-body-form` to `source-body-upload`
+
+**Key Features**:
+1. **Pure Upload Component**: Only handles file upload, text input, and JSON parsing
+2. **Data Callback System**: Passes JSON data to parent forms via `onJsonDataChange`
+3. **Form Orchestration**: Parent forms handle mapper integration and data flow
+4. **Simplified Interface**: Clean, focused component with minimal props
+5. **Backward Compatibility**: Maintains existing functionality while simplifying architecture
+
+**User Experience**:
+User uploads files or enters text → SourceBodyUpload validates and parses JSON → Data passed to parent form → Parent form orchestrates mapper integration → Mapper processes data → Results displayed in form
+
+**Technical Approach**:
+- Remove all mapper imports and components from SourceBodyUpload
+- Add `onJsonDataChange` callback prop for data communication
+- Update form components to handle mapper orchestration
+- Fix all import references from old component name
+- Maintain existing file upload and text input functionality
+
+### 9.1 SourceBodyUpload Component Refactoring
+
+**File**: `components/forms/blocks/source-body-upload.tsx` (REFACTOR)
+
+**Current State**: Complex component with mapper integration, file management, and text input.
+
+**Refactoring Requirements**:
+
+**Remove Mapper Integration**:
+- Remove imports: `JsonRequestMapper`, `JsonResponseMapper`, `JsonResultMapper`, `JsonExplorer`
+- Remove mapper-related props: `mapperType`, `requestType`, `mappings`, `onMappingsChange`
+- Remove mapper state and logic
+- Remove mapper rendering and conditional logic
+
+**Simplify Interface**:
+```typescript
+interface SourceBodyUploadProps {
+  label: string
+  description?: string
+  maxFiles?: number
+  maxSize?: number
+  className?: string
+  // NEW: Data callback for parent forms
+  onJsonDataChange?: (data: {
+    files: JsonFile[]
+    activeFile: JsonFile | null
+    textData: any | null
+    combinedData: any | null
+  }) => void
+}
+```
+
+**Keep Core Functionality**:
+- File upload with drag & drop
+- Text input with JSON parsing
+- File management (add, remove, select)
+- JSON validation and parsing
+- Visual feedback and status indicators
+
+**Remove Action Buttons**:
+- Remove "Get Response" button (moved to form/accordion)
+- Remove "Generate Response" button (moved to form/accordion)
+- Remove all mapper-related action buttons
+- Keep only "Upload JSON" and "Setup Mappings" buttons
+
+**Add Data Callback**:
+- Call `onJsonDataChange` whenever JSON data changes
+- Pass current files, active file, text data, and combined data
+- Allow parent forms to receive and process the data
+
+**Maintain Visual Design**:
+- Keep existing card-based design with status shadows
+- Keep file badges and visual feedback (using new FileBadge component)
+- Keep text input with JSON syntax highlighting
+- Keep drag & drop functionality
+
+### 9.2 Form Component Updates
+
+**Files to Update**:
+- `components/forms/run-request-form.tsx`
+- `components/forms/status-check-form.tsx` 
+- `components/forms/delivery-form.tsx`
+
+**Import Updates**:
+```typescript
+// OLD
+import { SourceBodyForm } from "./blocks/source-body-upload"
+
+// NEW  
+import { SourceBodyUpload } from "./blocks/source-body-upload"
+```
+
+**Add Mapper Integration**:
+Each form component needs to:
+1. Import required mapper components
+2. Add mapper state management
+3. Handle `onJsonDataChange` callbacks
+4. Render mappers when JSON data is available
+5. Pass processed data to mappers
+
+**RunRequestForm Updates**:
+```typescript
+// Add imports
+import { JsonRequestMapper } from "@/components/json/request/json-request-mapper"
+import { JsonResponseMapper } from "@/components/json/response/json-response-mapper"
+import { JsonExplorer } from "@/components/json/interface/json-explorer"
+
+// Add state for JSON data
+const [requestJsonData, setRequestJsonData] = useState<any>(null)
+const [responseJsonData, setResponseJsonData] = useState<any>(null)
+const [requestMappings, setRequestMappings] = useState<any>(null)
+const [responseMappings, setResponseMappings] = useState<any>(null)
+
+// Add handlers
+const handleRequestJsonDataChange = (data: any) => {
+  setRequestJsonData(data.combinedData)
+}
+
+const handleResponseJsonDataChange = (data: any) => {
+  setResponseJsonData(data.combinedData)
+}
+
+// Add action button handlers
+const handleGetResponse = () => {
+  // Handle get response logic
+  console.log("Get response clicked")
+}
+
+// Update JSX to include mappers and action buttons
+<SourceBodyUpload
+  label="Request JSON Mapping"
+  description="Upload JSON files to map request variables"
+  onJsonDataChange={handleRequestJsonDataChange}
+/>
+
+{requestJsonData && (
+  <JsonRequestMapper
+    data={requestJsonData}
+    requestAndResponseVariableMappings={requestMappings}
+    onProcessedData={(processedData) => (
+      <JsonExplorer
+        data={requestJsonData}
+        basePaths={processedData.basePaths}
+        fullPaths={processedData.fullPaths}
+        statistics={processedData.statistics}
+        mapperType="request"
+      />
+    )}
+  />
+)}
+
+<SourceBodyUpload
+  label="Response JSON Mapping"
+  description="Upload JSON files to map response variables"
+  onJsonDataChange={handleResponseJsonDataChange}
+/>
+
+{responseJsonData && (
+  <div className="space-y-4">
+    {/* Action Button - controlled by form */}
+    <div className="flex justify-center">
+      <PrimaryButton onClick={handleGetResponse}>
+        Get Response
+      </PrimaryButton>
+    </div>
+    
+    <JsonResponseMapper
+      data={responseJsonData}
+      requestAndResponseVariableMappings={responseMappings}
+      onProcessedData={(processedData) => (
+        <JsonExplorer
+          data={responseJsonData}
+          basePaths={processedData.basePaths}
+          fullPaths={processedData.fullPaths}
+          statistics={processedData.statistics}
+          mapperType="response"
+        />
+      )}
+    />
+  </div>
+)}
+```
+
+**StatusCheckForm Updates**:
+Similar pattern with request and response mappers for status check functionality, with "Get Status" action button controlled by the form.
+
+**DeliveryForm Updates**:
+Similar pattern with request and response mappers for delivery functionality, with "Get Delivery" action button controlled by the form.
+
+**Accordion Integration**:
+The `SourceRequestResponseAccordion` will also control action buttons:
+- **Response Type**: "Get response by sending request" button
+- **Result Type**: "Get results by sending set up requests" button
+- **Request Type**: No action button (only metadata + upload)
+
+### 9.3 Data Flow Architecture
+
+**SourceBodyUpload → Form Component**:
+1. User uploads files or enters text
+2. SourceBodyUpload validates and parses JSON
+3. `onJsonDataChange` callback fires with data
+4. Form component receives data and updates state
+5. Form component renders appropriate mapper
+6. Mapper processes data and renders explorer
+
+**Form Component → Mapper**:
+1. Form component passes JSON data to mapper
+2. Mapper processes data through pipeline
+3. Mapper calls `onProcessedData` with results
+4. Form component renders `JsonExplorer` with processed data
+5. Explorer displays interactive JSON structure
+
+**Data Structure**:
+```typescript
+interface JsonDataChangeEvent {
+  files: JsonFile[]           // All uploaded files
+  activeFile: JsonFile | null // Currently selected file
+  textData: any | null        // Parsed text input data
+  combinedData: any | null    // Combined data from files + text
+}
+```
+
+### 9.4 Import Reference Updates
+
+**Files to Update**:
+- `components/forms/run-request-form.tsx`
+- `components/forms/status-check-form.tsx`
+- `components/forms/delivery-form.tsx`
+- `components/accordions/source-request-response-accordion.tsx`
+
+**Search and Replace**:
+```typescript
+// OLD
+import { SourceBodyForm } from "./blocks/source-body-upload"
+
+// NEW
+import { SourceBodyUpload } from "./blocks/source-body-upload"
+
+// OLD
+<SourceBodyForm
+
+// NEW
+<SourceBodyUpload
+```
+
+**Component Usage Updates**:
+- Update all JSX usage from `<SourceBodyForm` to `<SourceBodyUpload`
+- Update prop names to match new interface
+- Add `onJsonDataChange` callbacks where needed
+
+### 9.5 Implementation Steps
+
+**Step 1: Refactor SourceBodyUpload Component**
+1. Remove all mapper imports and components
+2. Simplify interface to only include upload-related props
+3. Add `onJsonDataChange` callback prop
+4. Remove mapper rendering logic
+5. Keep file upload and text input functionality
+6. Test component in isolation
+
+**Step 2: Update Form Components**
+1. Update imports from `SourceBodyForm` to `SourceBodyUpload`
+2. Add mapper imports (`JsonRequestMapper`, `JsonResponseMapper`, `JsonExplorer`)
+3. Add JSON data state management
+4. Add `onJsonDataChange` handlers
+5. Add mapper rendering logic
+6. Test each form component
+
+**Step 3: Update Accordion Component**
+1. Update import reference
+2. Update component usage
+3. Test accordion functionality
+
+**Step 4: Testing and Validation**
+1. Test file upload functionality
+2. Test text input functionality
+3. Test data flow from upload to mappers
+4. Test mapper integration in forms
+5. Test accordion integration
+
+### 9.6 Benefits of Refactoring
+
+**Simplified Architecture**:
+- SourceBodyUpload focuses only on file upload and text input
+- Form components handle their specific mapper requirements
+- Clear separation of concerns
+- Easier to maintain and test
+
+**Improved Reusability**:
+- SourceBodyUpload can be used in any context needing JSON upload
+- Form components can choose their own mapper strategy
+- More flexible component composition
+
+**Better Data Flow**:
+- Explicit data callbacks instead of internal state management
+- Parent components control data processing
+- Clearer data flow and debugging
+
+**Reduced Complexity**:
+- Smaller, focused components
+- Less internal state management
+- Easier to understand and modify
+
+### 9.7 Success Criteria
+
+1. **Functionality**: All existing functionality preserved
+2. **Architecture**: Clean separation between upload and mapper concerns
+3. **Data Flow**: Explicit data callbacks working correctly
+4. **Reusability**: SourceBodyUpload can be used independently
+5. **Maintainability**: Easier to modify and extend components
+6. **Testing**: Each component can be tested in isolation
+
+---
+
+## Phase 10: Form Structure Implementation
+
+### Overview
+Restructure all form components to follow the correct page structure pattern where forms contain SourceRequestResponseAccordion components instead of individual form blocks.
+
+### Correct Form Structure Pattern
+
+#### Page Structure:
+```
+TabsContent
+└── Form Component (e.g., RunRequestForm)
+    ├── Form Headline/Title
+    ├── SourceRequestResponseAccordion type="request"
+    │   ├── RequestMetadataForm (from blocks)
+    │   └── SourceBodyUpload (from blocks)
+    └── SourceRequestResponseAccordion type="response"
+        ├── "Get Response/Result" Button (already in accordion)
+        └── SourceBodyUpload (from blocks)
+```
+
+#### Key Points:
+1. **Tab** contains **Form(s)**
+2. **Form** includes **headline + SourceRequestResponseAccordion components**
+3. **SourceRequestResponseAccordion** already handles:
+   - Request accordion: RequestMetadataForm + SourceBodyUpload
+   - Response accordion: "Get Response/Result" button + SourceBodyUpload
+   - Result accordion: "Get Results" button + SourceBodyUpload
+4. **"Save" button** goes in **PageHeader's actionButtons** (top right corner)
+5. **"Get Response/Result" button** is already built into the accordion
+
+### Forms to Restructure
+
+#### 1. RunRequestForm
+**Current Structure:**
+- Form container with individual components stacked vertically
+- RequestMetadataForm for method, URL, headers
+- Two separate SourceBodyUpload components for request and response JSON
+- LoadBalancingForm for concurrency and timeout
+- Submit button at the bottom right
+
+**Target Structure:**
+- Subheadline component with "Run Request Configuration"
+- Description component with explanatory text
+- Request accordion containing:
+  - RequestMetadataForm (method, URL, headers)
+  - SourceBodyUpload OR JsonRequestMapper (based on file availability)
+  - LoadBalancingForm (concurrency, timeout)
+- Response accordion containing:
+  - PrimaryButton "Get Response" (in accordion actions)
+  - SourceBodyUpload OR JsonResponseMapper (based on file availability)
+- No submit button (moved to page header)
+
+#### 2. StatusCheckForm
+**Current Structure:**
+- Form container with individual components stacked vertically
+- RequestMetadataForm for status check method, URL, headers
+- Two separate SourceBodyUpload components for request and response JSON
+- Submit button at the bottom right
+
+**Target Structure:**
+- Subheadline component with "Status Check Configuration"
+- Description component with explanatory text
+- Request accordion containing:
+  - RequestMetadataForm (method, URL, headers)
+  - SourceBodyUpload OR JsonRequestMapper (based on file availability)
+- Response accordion containing:
+  - PrimaryButton "Get Response" (in accordion actions)
+  - SourceBodyUpload OR JsonResponseMapper (based on file availability)
+- No submit button (moved to page header)
+
+#### 3. DeliveryForm
+**Current Structure:**
+- Form container with individual components stacked vertically
+- RequestMetadataForm for delivery method, URL, headers
+- Two separate SourceBodyUpload components for request and response JSON
+- Submit button at the bottom right
+
+**Target Structure:**
+- Subheadline component with "Delivery Configuration"
+- Description component with explanatory text
+- Request accordion containing:
+  - RequestMetadataForm (method, URL, headers)
+  - SourceBodyUpload OR JsonRequestMapper (based on file availability)
+- Response accordion containing:
+  - PrimaryButton "Get Response" (in accordion actions)
+  - SourceBodyUpload OR JsonResultMapper (based on file availability)
+- No submit button (moved to page header)
+
+### Component Mapping Details
+
+#### Conditional Rendering Logic:
+- **When no files uploaded**: Show SourceBodyUpload component
+- **When files are available**: Show appropriate Mapper component
+
+#### Mapper Component Usage:
+- **JsonRequestMapper**: Used for request JSON mapping in all forms
+- **JsonResponseMapper**: Used for response JSON mapping in RunRequestForm and StatusCheckForm  
+- **JsonResultMapper**: Used for response JSON mapping in DeliveryForm (handles results instead of responses)
+
+#### Source Delivery Type Parameterization:
+Forms will accept a `sourceDeliveryType` prop with values: `"endpoint" | "webhook" | "response"`
+
+**Source Delivery Type Behavior:**
+- **endpoint**: Shows full forms as defined (all accordions visible)
+- **webhook**: Hides request accordion from DeliveryForm only
+- **response**: Hides response accordion from RunRequestForm AND request accordion from DeliveryForm
+
+#### Component Hierarchy by Source Delivery Type:
+
+**Endpoint Source Delivery Type (Full Forms):**
+```
+Form Component
+├── Subheadline (form title)
+├── Description (explanatory text)
+├── Request Accordion
+│   ├── RequestMetadataForm (method, URL, headers)
+│   ├── SourceBodyUpload OR JsonRequestMapper (conditional)
+│   └── LoadBalancingForm (RunRequestForm only)
+└── Response Accordion
+    ├── PrimaryButton "Get Response" (in accordion actions)
+    └── SourceBodyUpload OR JsonResponseMapper/JsonResultMapper (conditional)
+```
+
+**Webhook Source Delivery Type:**
+```
+RunRequestForm (unchanged)
+├── Request Accordion
+└── Response Accordion
+
+StatusCheckForm (unchanged)
+├── Request Accordion
+└── Response Accordion
+
+DeliveryForm (modified)
+├── Subheadline (form title)
+├── Description (explanatory text)
+└── Response Accordion (request accordion hidden)
+    ├── PrimaryButton "Get Response" (in accordion actions)
+    └── SourceBodyUpload OR JsonResultMapper (conditional)
+```
+
+**Response Source Delivery Type:**
+```
+RunRequestForm (modified)
+├── Subheadline (form title)
+├── Description (explanatory text)
+├── Request Accordion (response accordion hidden)
+│   ├── RequestMetadataForm (method, URL, headers)
+│   ├── SourceBodyUpload OR JsonRequestMapper (conditional)
+│   └── LoadBalancingForm (concurrency, timeout)
+
+StatusCheckForm (unchanged)
+├── Request Accordion
+└── Response Accordion
+
+DeliveryForm (modified)
+├── Subheadline (form title)
+├── Description (explanatory text)
+└── Response Accordion (request accordion hidden)
+    ├── PrimaryButton "Get Response" (in accordion actions)
+    └── SourceBodyUpload OR JsonResultMapper (conditional)
+```
+
+### Implementation Steps
+
+#### Step 1: Update RunRequestForm
+1. Add `sourceDeliveryType` prop with type `"endpoint" | "webhook" | "response"`
+2. Remove individual form blocks
+3. Add Subheadline and Description components
+4. Replace with SourceRequestResponseAccordion components
+5. Add LoadBalancingForm in BaseAccordion (always visible)
+6. Implement conditional rendering based on sourceDeliveryType:
+   - **endpoint/webhook**: Show both Request and Response accordions
+   - **response**: Show only Request accordion (hide Response accordion)
+7. Remove submit button (will be in PageHeader)
+8. Update form data structure to match accordion props
+9. Add proper callback handlers
+
+#### Step 2: Update StatusCheckForm
+1. Add `sourceDeliveryType` prop with type `"endpoint" | "webhook" | "response"`
+2. Remove individual form blocks
+3. Add Subheadline and Description components
+4. Replace with SourceRequestResponseAccordion components
+5. Implement conditional rendering based on sourceDeliveryType:
+   - **All source delivery types**: Show both Request and Response accordions (unchanged)
+6. Remove submit button (will be in PageHeader)
+7. Update form data structure to match accordion props
+8. Add proper callback handlers
+
+#### Step 3: Update DeliveryForm
+1. Add `sourceDeliveryType` prop with type `"endpoint" | "webhook" | "response"`
+2. Remove individual form blocks
+3. Add Subheadline and Description components
+4. Replace with SourceRequestResponseAccordion components
+5. Implement conditional rendering based on sourceDeliveryType:
+   - **endpoint**: Show both Request and Response accordions
+   - **webhook**: Show only Response accordion (hide Request accordion)
+   - **response**: Show only Response accordion (hide Request accordion)
+6. Remove submit button (will be in PageHeader)
+7. Update form data structure to match accordion props
+8. Add proper callback handlers
+
+#### Step 4: Implement Upload/Mapper Orchestration
+Each form needs to orchestrate between SourceBodyUpload and mapper components:
+
+**Orchestration Logic:**
+- **When no files uploaded**: Show SourceBodyUpload component
+- **When files are available**: Show appropriate mapper component with JSON data
+
+**Data Flow Pattern:**
+```typescript
+// State management for orchestration
+const [jsonData, setJsonData] = useState<any>(null)
+const [hasFiles, setHasFiles] = useState(false)
+
+// Handle data from SourceBodyUpload
+const handleJsonDataChange = (data: {
+  files: JsonFile[]
+  activeFile: JsonFile | null
+  textData: any | null
+  combinedData: any | null
+}) => {
+  setJsonData(data.combinedData)
+  setHasFiles(data.files.length > 0)
+}
+
+// Conditional rendering in accordions
+{hasFiles ? (
+  // Show mapper when files are available
+  <JsonRequestMapper 
+    data={jsonData}
+    requestAndResponseVariableMappings={mappings}
+    onProcessedData={(processedData) => {
+      // Handle processed mapping data
+    }}
+  />
+) : (
+  // Show upload component when no files
+  <SourceBodyUpload
+    label="Request JSON Mapping"
+    onJsonDataChange={handleJsonDataChange}
+  />
+)}
+```
+
+**Implementation Requirements:**
+1. Add state management for JSON data and file presence
+2. Implement conditional rendering logic in each accordion
+3. Handle data flow between upload and mapper components
+4. Pass existing mappings to mapper components
+5. Handle processed data from mappers
+6. Ensure proper cleanup when switching between upload and mapper
+
+#### Step 5: Update Form Interfaces
+1. Add `sourceDeliveryType` prop to the mentioned 3 form interfaces
+2. Update form data structures to handle conditional accordion data
+3. Add orchestration state management interfaces
+4. Ensure proper TypeScript typing for conditional rendering
+
+---
+
+## Phase 11: Direct Mapper Integration in Forms
+
+#### Step 1: Update RunRequestForm
+Modify RunRequestForm to integrate mappers directly into SourceRequestResponseAccordion components.
+
+Structure:
+- Request accordion: RequestMetadataForm + LoadBalancingForm + JsonRequestMapper
+- Response accordion: JsonResponseMapper
+
+Remove:
+- SourceBodyUpload components
+- JSON data orchestration state (requestJsonData, responseJsonData, requestHasFiles, responseHasFiles)
+- JSON data change handlers (handleRequestJsonDataChange, handleResponseJsonDataChange)
+
+Keep:
+- RequestMetadataForm for method, URL, headers
+- LoadBalancingForm for concurrency and timeout
+- JsonRequestMapper for request JSON mapping
+- JsonResponseMapper for response JSON mapping
+
+#### Step 2: Update StatusCheckForm
+Modify StatusCheckForm to integrate mappers directly into SourceRequestResponseAccordion components.
+
+Structure:
+- Request accordion: RequestMetadataForm + JsonRequestMapper
+- Response accordion: JsonResponseMapper
+
+Remove:
+- SourceBodyUpload components
+- JSON data orchestration state
+- JSON data change handlers
+
+Keep:
+- RequestMetadataForm for status URL, method, headers
+- JsonRequestMapper for request JSON mapping
+- JsonResponseMapper for response JSON mapping
+
+#### Step 3: Update DeliveryForm
+Modify DeliveryForm to integrate mappers directly into SourceRequestResponseAccordion components.
+
+Structure:
+- Request accordion: RequestMetadataForm + JsonRequestMapper
+- Response accordion: JsonResultMapper
+
+Remove:
+- SourceBodyUpload components
+- JSON data orchestration state
+- JSON data change handlers
+
+Keep:
+- RequestMetadataForm for delivery URL, method, headers
+- JsonRequestMapper for request JSON mapping
+- JsonResultMapper for response JSON mapping
+
+#### Step 4: Update SourceRequestResponseAccordion
+Modify SourceRequestResponseAccordion to accept mapper components as props instead of managing SourceBodyUpload internally.
+
+Add props:
+- requestMapper: React.ReactNode for request section content
+- responseMapper: React.ReactNode for response section content
+
+Remove:
+- SourceBodyUpload integration
+- JSON data management
+- File upload handling
+
+#### Step 5: Remove SourceBodyUpload Component
+Delete the source-body-upload.tsx file entirely since it's no longer needed.
+
+Update all imports that reference source-body-upload to remove them.

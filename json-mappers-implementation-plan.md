@@ -2557,3 +2557,111 @@ const expandedPaths = useMemo(() => {
 - Test each component's responsibility independently
 
 This architectural redesign will create a clean, maintainable, and performant system that properly separates data processing, UI state management, and rendering concerns.
+
+## Phase 11: Source Body Upload Component Redesign
+
+### Analysis of Current Mappers
+
+#### JsonResultMapper
+- **Data Input**: `data: any` prop - expects raw JSON data
+- **Processing**: Uses `generatePathData(data)` to create basePaths and fullPaths
+- **Mapping Type**: Object/datapoint mappings from source-mappings.json
+- **Output**: `onProcessedData` callback with processed data and statistics
+
+#### JsonRequestMapper  
+- **Data Input**: `data: any` prop - expects raw JSON data
+- **Processing**: Uses `generatePathData(data)` + variable mapping functions
+- **Mapping Type**: Request variable mappings from template JSONs
+- **Output**: `onProcessedData` callback with processed data and statistics
+
+#### JsonResponseMapper
+- **Data Input**: `data: any` prop - expects raw JSON data  
+- **Processing**: Uses `generatePathData(data)` + response variable mapping functions
+- **Mapping Type**: Response variable mappings from template JSONs
+- **Output**: `onProcessedData` callback with processed data and statistics
+
+
+### Redesigned Component Architecture
+
+#### Simple 3-Section Layout
+```typescript
+interface SourceBodyUploadProps {
+  label?: string
+  description?: string
+  maxFiles?: number
+  maxSize?: number
+  className?: string
+  onJsonDataChange: (data: {
+    files: Array<{id: string, name: string, content: any}>
+    activeFile?: string
+    textData?: string
+    combinedData?: any
+  }) => void
+}
+```
+
+#### Three Main Sections
+1. **Get by Request Section**
+   - PrimaryButton with dynamic text based on mapper type
+   - Simple loading state during request
+   - Error display for failed requests
+   - No complex logic - just button and states
+
+2. **Upload File Section**  
+   - FormDragDrop component (existing)
+   - FileBadge components for uploaded files (existing)
+   - Simple file management without complex state
+
+3. **Paste as Text Section**
+   - FormTextarea component (existing)
+   - JSON validation and parsing
+   - Simple edit/view mode toggle
+
+#### State Management (Simplified)
+```typescript
+// Only essential state
+const [jsonFiles, setJsonFiles] = useState<JsonFile[]>([])
+const [activeFileId, setActiveFileId] = useState<string | null>(null)
+const [textInput, setTextInput] = useState<string>("")
+const [isRequesting, setIsRequesting] = useState<boolean>(false)
+const [requestError, setRequestError] = useState<string>("")
+```
+
+### Implementation Plan
+
+#### Step 1: Create New Component Structure
+- Create new `source-body-upload.tsx` in `components/json/interface/` directory
+- Implement proper tab system with 3 tabs: "Get by Request", "Upload File", "Paste as Text"
+- Use existing components: FormDragDrop, FormTextarea, PrimaryButton, FileBadge
+- Implement clean state management with only 5 state variables
+
+#### Step 2: Implement Core Features
+- **Get by Request**: Simple button with loading/error states
+- **Upload File**: Use FormDragDrop with file management
+- **Paste as Text**: Use FormTextarea with JSON validation
+- **JSON Rendering**: Single JsonView component for all sections
+
+#### Step 3: Data Flow Integration
+- Single `onJsonDataChange` callback for all input methods
+- Consistent data structure: `{files, activeFile, textData, combinedData}`
+- Automatic JSON parsing and validation
+- Clean integration with existing mapper components
+
+#### Step 4: Remove Cursor Issues
+- No custom tab components
+- No complex hover states
+- Use existing UI components without modifications
+- Simple CSS transitions only
+
+#### Step 5: Testing and Validation
+- Test with all three mapper types
+- Verify data flow from input to mapper
+- Test error handling and edge cases
+- Performance testing for large JSON files
+
+### Expected Benefits
+- **Simplified Architecture**: 80% reduction in component complexity
+- **Better Performance**: No cursor flickering or excessive re-renders
+- **Easier Maintenance**: Clear separation of concerns
+- **Better Integration**: Seamless integration with existing mappers
+- **Reusable Components**: Leverages existing FormDragDrop, FormTextarea, etc.
