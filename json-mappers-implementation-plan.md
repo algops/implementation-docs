@@ -1920,748 +1920,692 @@ After implementation:
 - Ensure `handlePathSelect` only updates `isSelected` and triggers UI updates
 - Ensure mapping changes properly reset downstream processing flags
 
-## Phase 10: Complete Architectural Redesign - Separation of Concerns (CRITICAL)
+## Phase 10: SourceBodyUpload Integration into Mapper Components (CRITICAL)
 
-**Goal**: Implement proper separation of concerns by restructuring the entire JSON mapping architecture to eliminate circular dependencies, infinite re-render loops, and performance issues through clean state management and component responsibilities.
+**Goal**: Integrate SourceBodyUpload functionality directly into all three mapper components (JsonRequestMapper, JsonResponseMapper, JsonResultMapper) to eliminate the need for complex form orchestration and provide seamless upload-to-mapping workflow.
 
 ### 10.1 Current Architecture Problems
 
 **Fundamental Issues Identified**:
 
-1. **Separation of Concerns Violations**:
-   - Mappers managing UI state (`isSelected`, `isExpanded`)
-   - Mappers handling user interactions (`handlePathSelect`)
-   - Complex state management with 5+ state variables
-   - Mixing data processing with UI concerns
+1. **Disconnected Upload Functionality**:
+   - SourceBodyUpload component exists but only used in showcase pages
+   - Forms show placeholder text "Upload JSON files to see mapping" with no actual upload capability
+   - No integration between upload component and mapper components
+   - Users cannot upload files in actual form workflows
 
-2. **Circular Dependencies**:
-   - `fullPaths` in `useEffect` dependencies causing infinite loops
-   - `handlePathSelect` updating `fullPaths` triggering unnecessary recalculations
-   - State update chain reactions causing performance issues
+2. **Complex Form Orchestration**:
+   - Forms have dead code: `requestJsonData`, `responseJsonData` state variables that are never used
+   - Forms have unused handlers: `handleRequestJsonDataChange`, `handleResponseJsonDataChange` that are never called
+   - Complex conditional rendering logic needed to switch between upload and mapper components
+   - State management complexity between separate upload and mapper components
 
-3. **Performance Issues**:
-   - Statistics recalculated on every path selection
-   - Unnecessary re-renders due to state management problems
-   - Console logs cluttering production code
+3. **Poor User Experience**:
+   - No seamless transition from upload to mapping
+   - Jarring component switches when data becomes available
+   - Inconsistent interface across different mapper types
+   - No way to upload files in real form workflows
 
-4. **Architectural Confusion**:
-   - Wrong source of truth for UI state
-   - Complex state synchronization between components
-   - Unclear component responsibilities
+4. **Maintenance Issues**:
+   - SourceBodyUpload component isolated from actual usage
+   - Duplicate state management patterns across forms
+   - Complex integration requirements for each new form
+   - Difficult to maintain consistent upload behavior
 
 ### 10.2 Correct Architecture Design
 
-#### **10.2.1 Mappers (Data Processing Only)**
+#### **10.2.1 Enhanced Mapper Components (Data Processing + Upload)**
 **Responsibilities**:
 - Process JSON data and generate `basePaths` and `fullPaths`
 - Apply mappings (object, datapoint, variable)
 - Calculate statistics
-- NO UI state management
-- NO user interaction handling
+- Handle file upload, text input, and API requests
+- Provide seamless transition from upload to mapping
+- NO UI state management for selection/expansion
+- NO user interaction handling for JSON exploration
 
-**State Variables** (Only 3):
+**Enhanced Interface**:
+```typescript
+interface JsonRequestMapperProps {
+  data?: any  // Make optional - when null, show upload
+  requestAndResponseVariableMappings: RequestAndResponseVariableMappings
+  showUpload?: boolean  // Enable/disable upload functionality (default: true)
+  uploadLabel?: string  // Customize upload component label
+  onDataChange?: (data: any) => void  // Handle data from upload
+  onProcessedData?: (processedData: {...}) => React.ReactNode
+}
+```
+
+**State Variables** (Enhanced):
 - `jsonProcessed` - Step 1 completion flag
 - `mappingsProcessed` - Step 2 completion flag  
 - `statisticsProcessed` - Step 3 completion flag
+- `jsonFiles` - Array of uploaded files
+- `activeFileId` - Currently selected file ID
+- `textInput` - Text input content
+- `isRequesting` - API request loading state
+- `requestError` - API request error state
 
-**Data Types** (Modify existing):
-- Remove `isExpanded` from `BasePathData` interface
-- Remove `isSelected` from `FullPathData` interface
-- Keep existing `basePaths` and `fullPaths` structure without UI state
+**Upload Integration Logic**:
+- When `data` is null/undefined AND `showUpload` is true: render SourceBodyUpload component
+- When `data` exists: process and render mapping results
+- Handle data flow from upload to mapper processing internally
+- Seamless transition without component switching
 
-#### **10.2.2 JsonExplorer (UI State Management)**
-**Responsibilities**:
-- Manage all UI state (`isExpanded`, `isSelected`)
-- Handle user interactions (`handlePathSelect`, `handleNodeExpand`)
-- Enrich data with UI state before passing to renderer
-- Coordinate between mappers and renderer
+### 10.3 Implementation Strategy
 
-**State Variables**:
-- `basePathsStates` - Record with path and `isExpanded` boolean for controlling accordions
-- `fullPathsStates` - Record with path, type, and `isSelected` boolean for controlling json nodes
+#### **10.3.1 Mapper Component Enhancement Pattern**
 
-**Interface**:
-```typescript
-interface BasePathState {
-  path: string
-  isExpanded: boolean
-}
+**For All Three Mappers (JsonRequestMapper, JsonResponseMapper, JsonResultMapper)**:
 
-interface FullPathState {
-  path: string
-  type: 'key' | 'value'
-  isSelected: boolean
-}
-```
+**Step 1: Update Interface**
+- Make `data` prop optional (`data?: any`)
+- Add `showUpload?: boolean` prop (default: true)
+- Add `uploadLabel?: string` prop for customization
+- Add `onDataChange?: (data: any) => void` callback
 
-#### **10.2.3 JsonRenderer (Rendering Only)**
-**Responsibilities**:
-- Receive enriched data from explorer
-- Handle rendering optimizations using useMemo
-- Render accordions and nodes
-- NO internal state management
+**Step 2: Add Upload State Management**
+- Add `jsonFiles` state for uploaded files
+- Add `activeFileId` state for selected file
+- Add `textInput` state for text input
+- Add `isRequesting` state for API requests
+- Add `requestError` state for error handling
 
-**Performance Optimization**:
-- Uses `useMemo` for `renderedContent` calculation
-- Automatic dependency tracking for optimal performance
-- Controlled by parent props (no internal state needed)
+**Step 3: Implement Upload Integration Logic**
+- Create `handleJsonDataChange` callback to process upload data
+- Add conditional rendering: show upload when no data, show mapper when data exists
+- Handle seamless transition from upload to mapping mode
+- Process uploaded data through existing mapper pipeline
 
-#### **10.2.4 JsonAccordion & JsonNode (Controlled Components)**
-**Responsibilities**:
-- Pure rendering components
-- Fully controlled by parent
-- No internal state management
-- Receive all state through props
+**Step 4: Update Rendering Logic**
+- When `!data && showUpload`: render SourceBodyUpload component
+- When `!data && !showUpload`: render placeholder text
+- When `data`: process through existing mapper logic
+- Call `onDataChange` when data becomes available from upload
 
-### 10.2.5 Complete Data Flow and Function Sequence
+#### **10.3.2 Data Flow Architecture**
 
-#### **Initial Data Processing Flow**
+**Upload to Mapping Flow**:
+1. User uploads file/pastes text/makes API request
+2. SourceBodyUpload processes input and calls `handleJsonDataChange`
+3. Mapper updates internal state and calls `onDataChange` callback
+4. Form receives data via `onDataChange` and updates form state
+5. Mapper receives data via `data` prop and processes through mapping pipeline
+6. Seamless transition from upload UI to mapping UI
 
-**Step 1: Data Ingestion (JsonResultMapper)**
-- Function: `generatePathData(data)` receives raw JSON data
-- Process: Traverses JSON structure, creates basePaths and fullPaths arrays
-- Output: Clean data structures without any UI state
-- State: Sets `jsonProcessed = true`
+**Form Integration**:
+- Forms pass `data` prop to mappers (can be null/undefined)
+- Forms handle `onDataChange` callback to update form state
+- No complex orchestration state needed
+- No conditional rendering logic in forms
 
-**Step 2: Mapping Application (All Mappers)**
-- **JsonResultMapper**: `assignMappingToFullPath(mappings, fullPaths)` processes object/datapoint mappings
-- **JsonRequestMapper**: `assignVariableToFullPath(mappingSetup, fullPaths)` processes request variable mappings
-- **JsonResponseMapper**: `assignVariableToFullPath(mappingSetup, fullPaths)` processes response variable mappings
-- Process: Matches JSON paths to mapping patterns, assigns mapping IDs to fullPaths
-- Output: Updated fullPaths with objectMappings, datapointMappings, variableMappings arrays
-- State: Sets `mappingsProcessed = true`
+### 10.4 Specific Implementation Steps
 
-**Step 3: Statistics Calculation (JsonResultMapper)**
-- Function: `getBasePathStatus(basePaths, fullPaths)` determines status for each basePath
-- Function: `getBasePathStatistics(updatedBasePaths, fullPaths)` calculates statistics
-- Process: Aggregates mapping counts and status information for progress tracking
-- Output: BasePaths with status and statistics, fullPaths with mapping assignments
-- State: Sets `statisticsProcessed = true`
+#### **10.4.1 Update JsonRequestMapper**
 
-**Step 4: Data Handoff (JsonResultMapper → JsonExplorer)**
-- Function: `onProcessedData` callback passes processed data
-- Data Structure: `{basePaths, fullPaths, statistics, dataReady: true}`
-- Process: Mapper calls callback with clean data, no UI state included
+**File**: `components/json/request/json-request-mapper.tsx`
 
-#### **UI State Management Flow**
+**Change 1: Update Interface**
+- Change `data: any` to `data?: any` (make optional)
+- Add `showUpload?: boolean` prop (default: true)
+- Add `uploadLabel?: string` prop
+- Add `onDataChange?: (data: any) => void` callback
 
-**Step 5: UI State Initialization (JsonExplorer)**
-- Function: `useState` hooks create empty state objects
-- Process: Initializes basePathsStates and fullPathsStates as empty records
-- Data Structure: `Record<string, BasePathState>` and `Record<string, FullPathState>`
-- Purpose: Separate UI state from data processing
+**Change 2: Add Upload State Management**
+- Add `const [jsonFiles, setJsonFiles] = useState<JsonFile[]>([])`
+- Add `const [activeFileId, setActiveFileId] = useState<string | null>(null)`
+- Add `const [textInput, setTextInput] = useState<string>("")`
+- Add `const [isRequesting, setIsRequesting] = useState<boolean>(false)`
+- Add `const [requestError, setRequestError] = useState<string>("")`
 
-**Step 6: State Derivation (JsonExplorer)**
-- **Obsolete**: `fullPaths.find(path => path.isSelected)` - current derivation from fullPaths
-- **New**: `Object.values(fullPathsStates).find()` derives selectedPath and selectedType
-- Process: Searches fullPathsStates for isSelected true, extracts path and type
-- Output: Current selected path and type for rendering
-- Purpose: Single source of truth for selection state
+**Change 3: Add Upload Integration Logic**
+- Create `handleJsonDataChange` callback to process upload data
+- Add conditional rendering logic before existing processing pipeline
+- When `!data && showUpload`: render SourceBodyUpload component
+- When `!data && !showUpload`: render placeholder text
+- When `data`: continue with existing mapper logic
 
-#### **User Interaction Flow**
+**Change 4: Update Data Processing Pipeline**
+- Modify existing useEffect to handle data from upload
+- Call `onDataChange` when data becomes available
+- Reset processing states when new data is received
 
-**Step 7: Path Selection (JsonExplorer)**
-- **Obsolete**: `setFullPaths(fullPaths.map(...))` - current selection in fullPaths
-- **New**: `handlePathSelect(path, parentPaths, type)` manages selection
-- Process: Clears all previous selections, sets new selection in fullPathsStates
-- Data Structure: Updates `fullPathsStates[path:type] = {path, type, isSelected: true}`
-- Trigger: User clicks on JSON node in renderer
+#### **10.4.2 Update JsonResponseMapper**
 
-**Step 8: Accordion Expansion (JsonExplorer)**
-- **Obsolete**: `setExpandedPaths(new Set(...))` - current expansion in Set
-- **New**: `handleAccordionExpand(path)` manages accordion expansion
-- Process: Toggles isExpanded state for specific basePath
-- Data Structure: Updates `basePathsStates[path] = {path, isExpanded: boolean}`
-- Trigger: User clicks on accordion header in renderer
+**File**: `components/json/response/json-response-mapper.tsx`
 
-#### **Rendering Flow**
+**Apply identical changes as JsonRequestMapper**:
+- Same interface updates
+- Same state management additions
+- Same upload integration logic
+- Same data processing pipeline updates
 
-**Step 9: Data Preparation (JsonExplorer → JsonRenderer)**
-- Function: Props passing with both data and UI state
-- Data Structure: `{basePaths, fullPaths, basePathsStates, fullPathsStates}`
-- Process: Passes clean data and separate UI state to renderer
-- Purpose: Renderer receives everything needed for rendering
-
-**Step 10: State Derivation (JsonRenderer)**
-- **Obsolete**: `expandedPaths` prop - current direct prop passing
-- **New**: `useMemo` derives expandedPaths from basePathsStates
-- Process: Converts basePathsStates record to Set of expanded paths
-- Data Structure: `Set<string>` of expanded path strings
-- Purpose: Converts UI state to format expected by rendering functions
-
-**Step 11: Rendering Optimization (JsonRenderer)**
-- Function: `useMemo` for `renderedContent` calculation
-- Process: Automatically recalculates when dependencies change
-- Dependencies: `[data, basePaths, fullPaths, basePathsStates, fullPathsStates, onNodeClick, onAccordionExpand, expandedPaths]`
-- Purpose: Optimal performance with automatic dependency tracking
-
-**Step 12: Component Rendering (JsonRenderer → JsonAccordion/JsonNode)**
-- Function: `renderBase`, `renderNestedLevel` call rendering utilities
-- Process: Passes data and UI state to individual components
-- Data Structure: Props include `isExpanded`, `isSelected` from state objects
-- Purpose: Controlled components receive all state from parent
-
-#### **Data Structure Flow**
-
-**Clean Data (Mappers)**:
-- BasePaths: `{path: {status, statistics}}` - no UI state
-- FullPaths: `{path, type, value, status, objectMappings, datapointMappings, variableMappings}` - no UI state
-
-**UI State (JsonExplorer)**:
-- BasePathsStates: `{path: {path, isExpanded}}` - accordion control
-- FullPathsStates: `{path:type: {path, type, isSelected}}` - node selection control
-
-**Rendering Optimization (JsonRenderer)**:
-- useMemo: `renderedContent` - automatic performance optimization
-- Dependencies: `[data, basePaths, fullPaths, basePathsStates, fullPathsStates, onNodeClick, onAccordionExpand, expandedPaths]`
-
-**Component Props (JsonAccordion/JsonNode)**:
-- Receives: `isExpanded`, `isSelected` from parent state
-- Receives: `onClick` callbacks to communicate with parent
-- No internal state management
-- Fully controlled by parent components
-
-#### **User Interaction Callback Flow**
-
-**When User Clicks JsonNode**:
-- JsonNode calls `onClick(path, type)` callback
-- JsonExplorer updates `fullPathsStates` directly
-- JsonNode receives new `isSelected` prop and re-renders
-
-**When User Clicks JsonAccordion**:
-- JsonAccordion calls `onAccordionExpand(path)` callback
-- JsonExplorer updates `basePathsStates` directly
-- JsonAccordion receives new `isExpanded` prop and re-renders
-
-**Standard React Pattern**:
-1. User clicks component
-2. Component calls parent callback
-3. Parent updates state directly
-4. Parent re-renders with new state
-5. Component receives new props and re-renders
-
-#### **Function Responsibilities Summary**
-
-**JsonResultMapper Functions**:
-- `generatePathData()` - creates clean data structures
-- `assignMappingToFullPath()` - applies mappings to data
-- `getBasePathStatus()` - determines path statuses
-- `getBasePathStatistics()` - calculates statistics
-
-**JsonExplorer Functions**:
-- `handlePathSelect()` - manages node selection state
-- `handleAccordionExpand()` - manages accordion expansion state
-- State derivation functions - extract current UI state
-
-**JsonRenderer Functions**:
-- `useMemo` for `expandedPaths` - derive expanded paths from basePathsStates
-- `useMemo` for `renderedContent` - optimize rendering performance
-- Rendering utilities - create components with proper state
-
-**Child Component Functions**:
-- Pure rendering functions - display data with received state
-- No state management functions - fully controlled
-
-### 10.3 Required Changes
-
-#### **10.3.1 Type Definitions (types/json.ts)**
-
-**File**: `types/json.ts`
-
-**Change 1.1: Remove `isExpanded` from BasePathData interface (line 9)**
-- **Current**: `isExpanded?: boolean`
-- **Action**: Delete line 9 completely
-- **Result**: BasePathData will only contain `status` and `statistics`
-
-**Change 1.2: Remove `isSelected` from FullPathData interface (line 23)**
-- **Current**: `isSelected?: boolean`
-- **Action**: Delete line 23 completely
-- **Result**: FullPathData will only contain data properties, no UI state
-
-**Change 1.3: Add BasePathState interface (after line 16)**
-- **Action**: Insert new interface after BasePathData
-- **Code**:
-```typescript
-export interface BasePathState {
-  path: string
-  isExpanded: boolean
-}
-```
-
-**Change 1.4: Add FullPathState interface (after BasePathState)**
-- **Action**: Insert new interface after BasePathState
-- **Code**:
-```typescript
-export interface FullPathState {
-  path: string
-  type: 'key' | 'value'
-  isSelected: boolean
-}
-```
-
-**Change 1.5: Remove RenderingState interface (not needed)**
-- **Action**: Skip this change - JsonRenderer uses useMemo for performance, no internal state needed
-- **Reasoning**: Current JsonRenderer is already optimized with useMemo and controlled by parent props
-
-#### **10.3.2 Mappers (All Three) - JsonResultMapper Example**
+#### **10.4.3 Update JsonResultMapper**
 
 **File**: `components/json/response/json-result-mapper.tsx`
 
-**Change 2.1: Remove all console.log statements (lines 74-79, 81, 94-100, 102-108, 110-116, 118-124, 126-132, 134-140, 142-148, 150-156, 158-164, 166-172, 174-180, 182-188, 190-196, 198-204, 206-212, 214-220, 222-228, 230-236, 241-245, 252-258, 261-268, 280)**
-- **Action**: Delete all lines containing `console.log` statements
-- **Total lines to delete**: 28 lines
+**Apply identical changes as JsonRequestMapper**:
+- Same interface updates
+- Same state management additions
+- Same upload integration logic
+- Same data processing pipeline updates
 
-**Change 2.2: Remove `isSelected` from fullPaths state type (line 85)**
-- **Current**: `isSelected?: boolean,`
-- **Action**: Delete `isSelected?: boolean,` from the type definition
-- **Result**: fullPaths will not contain isSelected property
+#### **10.4.4 Update Form Components**
 
-**Change 2.3: Remove `statusesProcessed` state variable (line 91)**
-- **Current**: `const [statusesProcessed, setStatusesProcessed] = useState(false)`
-- **Action**: Delete entire line 91
+**File**: `components/forms/run-request-form.tsx`
 
-**Change 2.4: Remove `handlePathSelect` function (lines 240-250)**
-- **Action**: Delete entire function including the useCallback wrapper
-- **Lines to delete**: 11 lines (240-250)
+**Change 1: Remove Dead Code**
+- Remove `requestJsonData` and `responseJsonData` from form state
+- Remove `handleRequestJsonDataChange` and `handleResponseJsonDataChange` handlers
+- Remove unused state management logic
 
-**Change 2.5: Remove `onPathSelect` from props interface (line 59)**
-- **Current**: `onPathSelect: (path: string | undefined, parentPaths?: string[], type?: 'key' | 'value') => void`
-- **Action**: Delete entire line 59
+**Change 2: Update Mapper Integration**
+- Pass `data={formData.requestJsonData}` to JsonRequestMapper (can be null)
+- Pass `data={formData.responseJsonData}` to JsonResponseMapper (can be null)
+- Add `onDataChange` callbacks to update form state
+- Add `showUpload={true}` and `uploadLabel` props
 
-**Change 2.6: Remove `onPathSelect` from onProcessedData callback (line 275)**
-- **Current**: `onPathSelect: handlePathSelect`
-- **Action**: Delete `onPathSelect: handlePathSelect,` from the return object
+**Change 3: Simplify Form Logic**
+- Remove conditional rendering logic
+- Remove placeholder text rendering
+- Let mappers handle upload/mapping display internally
 
-**Change 2.7: Remove `isSelected` from onProcessedData fullPaths type (line 56)**
-- **Current**: `isSelected?: boolean,`
-- **Action**: Delete `isSelected?: boolean,` from the fullPaths type in onProcessedData
+**Apply same changes to**:
+- `components/forms/status-check-form.tsx`
+- `components/forms/delivery-form.tsx`
 
-**Change 2.8: Remove Step 3 useEffect (lines 189-212)**
-- **Action**: Delete entire useEffect block for statuses processing
-- **Lines to delete**: 24 lines (189-212)
+#### **10.4.5 Update SourceRequestResponseAccordion**
 
-**Change 2.9: Update Step 4 useEffect dependencies (line 237)**
-- **Current**: `}, [statusesProcessed, statisticsProcessed, fullPaths])`
-- **Action**: Change to `}, [mappingsProcessed, statisticsProcessed, fullPaths])`
+**File**: `components/accordions/source-request-response-accordion.tsx`
 
-**Change 2.10: Update Step 4 useEffect condition (line 221)**
-- **Current**: `if (statusesProcessed && !statisticsProcessed)`
-- **Action**: Change to `if (mappingsProcessed && !statisticsProcessed)`
-
-**Change 2.11: Update Step 4 useEffect to call getBasePathStatus first (lines 223-230)**
-- **Current**: Direct call to `getBasePathStatistics`
-- **Action**: Add call to `getBasePathStatus` first, then `getBasePathStatistics`
-- **New code**:
-```typescript
-const statusedBasePaths = getBasePathStatus(basePaths, fullPaths)
-const statisticsBasePaths = getBasePathStatistics(statusedBasePaths, fullPaths)
-setBasePaths(statisticsBasePaths)
-```
-
-#### **10.3.3 JsonExplorer**
-
-**File**: `components/json/interface/json-explorer.tsx`
-
-**Change 3.1: Add BasePathState and FullPathState imports (after line 13)**
-- **Action**: Add imports after existing imports
-- **Code**:
-```typescript
-import { BasePathState, FullPathState } from '../../../types/json'
-```
-
-**Change 3.2: Add basePathsStates state management (after line 55)**
-- **Action**: Add new state after searchQuery
-- **Code**:
-```typescript
-const [basePathsStates, setBasePathsStates] = useState<Record<string, BasePathState>>({})
-```
-
-**Change 3.3: Add fullPathsStates state management (after basePathsStates)**
-- **Action**: Add new state after basePathsStates
-- **Code**:
-```typescript
-const [fullPathsStates, setFullPathsStates] = useState<Record<string, FullPathState>>({})
-```
-
-**Change 3.4: Remove selectedPathData derivation (lines 61-63)**
-- **Action**: Delete lines 61-63 completely
-- **Current code to delete**:
-```typescript
-const selectedPathData = fullPaths.find(path => path.isSelected)
-const selectedPath = selectedPathData?.path
-const selectedType = selectedPathData?.type
-```
-
-**Change 3.5: Create selectedPath and selectedType from fullPathsStates (after line 60)**
-- **Action**: Add new derivation logic
-- **Code**:
-```typescript
-const selectedPathState = Object.values(fullPathsStates).find(state => state.isSelected)
-const selectedPath = selectedPathState?.path
-const selectedType = selectedPathState?.type
-```
-
-**Change 3.6: Remove console.log statements (lines 65-71)**
-- **Action**: Delete entire console.log block
-- **Lines to delete**: 7 lines (65-71)
-
-**Change 3.7: Add handlePathSelect function (after line 82)**
-- **Action**: Add new function to manage fullPathsStates
-- **Code**:
-```typescript
-const handlePathSelect = useCallback((path: string | undefined, parentPaths?: string[], type?: 'key' | 'value') => {
-  setFullPathsStates(prev => {
-    const newStates = { ...prev }
-    // Clear all previous selections
-    Object.keys(newStates).forEach(key => {
-      newStates[key] = { ...newStates[key], isSelected: false }
-    })
-    // Set new selection
-    if (path && type) {
-      const stateKey = `${path}:${type}`
-      newStates[stateKey] = { path, type, isSelected: true }
-    }
-    return newStates
-  })
-}, [])
-```
-
-**Change 3.8: Add handleAccordionExpand function (after handlePathSelect)**
-- **Action**: Add new function to manage basePathsStates
-- **Code**:
-```typescript
-const handleAccordionExpand = useCallback((path: string) => {
-  setBasePathsStates(prev => ({
-    ...prev,
-    [path]: { path, isExpanded: !prev[path]?.isExpanded }
-  }))
-}, [])
-```
-
-**Change 3.9: Update JsonRenderer props (around line 280)**
-- **Action**: Replace expandedPaths, selectedPath, selectedType with basePathsStates, fullPathsStates
-- **Current**: `expandedPaths={expandedPaths} selectedPath={selectedPath} selectedType={selectedType}`
-- **New**: `basePathsStates={basePathsStates} fullPathsStates={fullPathsStates}`
-
-#### **10.3.4 JsonRenderer**
-
-**File**: `components/json/interface/json-renderer.tsx`
-
-**Change 4.1: Add BasePathState and FullPathState imports (after line 10)**
-- **Action**: Add imports after existing imports
-- **Code**:
-```typescript
-import { BasePathState, FullPathState } from '../../types/json'
-```
-
-**Change 4.2: Add basePathsStates and fullPathsStates to props interface (around line 36)**
-- **Action**: Replace expandedPaths, selectedPath, selectedType with new props
-- **Remove**: `expandedPaths?: Set<string>`, `selectedPath?: string`, `selectedType?: 'key' | 'value'`
-- **Add**: `basePathsStates?: Record<string, BasePathState>`, `fullPathsStates?: Record<string, FullPathState>`
-
-**Change 4.3: Remove renderingState management (not needed)**
-- **Action**: Skip this change - JsonRenderer uses useMemo for performance optimization
-- **Reasoning**: Current JsonRenderer is already optimized with useMemo and controlled by parent props
-
-**Change 4.4: Remove all console.log statements**
-- **Action**: Find and delete all console.log statements throughout the file
-- **Note**: This will require scanning the entire file for console.log statements
-
-**Change 4.5: Update expandedPaths logic (around line 90)**
-- **Current**: Uses expandedPaths prop
-- **Action**: Change to derive from basePathsStates
-- **New code**:
-```typescript
-const expandedPaths = useMemo(() => {
-  const expanded = new Set<string>()
-  Object.values(basePathsStates || {}).forEach(state => {
-    if (state.isExpanded) expanded.add(state.path)
-  })
-  return expanded
-}, [basePathsStates])
-```
-
-**Change 4.6: Update renderedContent useMemo dependencies (around line 117)**
-- **Current**: `[data, basePaths, fullPaths, selectedPath, onNodeClick, onNodeExpand, expandedPaths]`
-- **Action**: Replace selectedPath with basePathsStates and fullPathsStates, keep expandedPaths
-- **New dependencies**: `[data, basePaths, fullPaths, basePathsStates, fullPathsStates, onNodeClick, onAccordionExpand, expandedPaths]`
-- **Reasoning**: selectedPath is derived from fullPathsStates, so we need the source state instead
-
-#### **10.3.5 JsonAccordion & JsonNode**
-
-**File**: `components/accordions/json-accordion.tsx`
-
-**Change 5.1: Remove all internal state management**
-- **Action**: Find and remove all useState calls for internal state
-- **Note**: This requires scanning the entire file for useState usage
-
-**Change 5.2: Add isExpanded prop to interface (around line 15)**
-- **Action**: Add new prop to JsonNodeData interface
-- **Code**: `isExpanded?: boolean`
-
-**Change 5.3: Remove all console.log statements**
-- **Action**: Find and delete all console.log statements throughout the file
-
-**File**: `components/json/node/json-node.tsx`
-
-**Change 5.4: Remove all internal state management**
-- **Action**: Find and remove all useState calls for internal state
-- **Note**: This requires scanning the entire file for useState usage
-
-**Change 5.5: Add isSelected prop to interface (around line 16)**
-- **Action**: Add new prop to JsonNodeProps interface
-- **Code**: `isSelected?: boolean`
-
-**Change 5.6: Remove all console.log statements**
-- **Action**: Find and delete all console.log statements throughout the file
-
-#### **10.3.6 Mapping Utilities (mapping-utils.tsx)**
-
-**File**: `utils/json/mapping-utils.tsx`
-
-**Change 6.1: Remove all console.log statements**
-- **Action**: Find and delete all console.log statements throughout the file
-- **Note**: This requires scanning the entire file for console.log statements
-
-**Change 6.2: Keep optimization logic for assignMappingToFullPath and assignVariableToFullPath**
-- **Action**: Ensure these functions only create new arrays when changes are made
-- **Note**: Current implementation should already have this optimization
-
-#### **10.3.7 Rendering Utilities (rendering-utils.tsx)**
-
-**File**: `utils/json/rendering-utils.tsx`
-
-**Change 7.1: Remove all console.log statements**
-- **Action**: Find and delete all console.log statements throughout the file
-- **Note**: This requires scanning the entire file for console.log statements
-
-**Change 7.2: Optimize rendering functions for better performance**
-- **Action**: Review and optimize any performance bottlenecks in rendering functions
-- **Note**: This may require performance analysis of the current functions
-
-### 10.4 Implementation Steps
-
-#### **Step 1: Update Type Definitions**
-- Modify `types/json.ts` to remove UI state from data interfaces
-- Add new UI state interfaces
-- Add rendering state interface
-
-#### **Step 2: Clean Up Mappers**
-- Remove all console.log statements
-- Remove UI state from fullPaths
-- Remove user interaction handling
-- Simplify to 3 processing states only
-- Clean data generation only
-
-#### **Step 3: Update JsonExplorer**
-- Add UI state management (`basePathsStates`, `fullPathsStates`)
-- Add enrichment functions
-- Handle all user interactions
-- Remove console.log statements
-- Update prop interfaces
-
-#### **Step 4: Update JsonRenderer**
-- Update prop interfaces to use basePathsStates and fullPathsStates
-- Remove console.log statements
-- Update useMemo dependencies for optimal performance
-- Keep existing useMemo optimization approach
-
-#### **Step 5: Update Child Components**
-- Make JsonAccordion and JsonNode fully controlled
-- Remove internal state management
-- Update prop interfaces
-- Remove console.log statements
-
-#### **Step 6: Clean Up Utilities**
-- Remove console.log statements from all utility functions
-- Optimize performance where needed
+**No changes needed** - accordion already passes mapper components as props
+- Mappers handle upload functionality internally
+- Accordion just renders the mapper components
+- No upload-specific logic needed in accordion
 
 ### 10.5 Expected Benefits
 
-#### **10.5.1 Performance Improvements**
-- No circular dependencies
-- No infinite re-render loops
-- Minimal re-renders with proper state management
-- Better performance with optimized rendering
+#### **10.5.1 Simplified Architecture**
+- **Single Component Responsibility**: Each mapper handles both upload and mapping
+- **Eliminated Orchestration**: No complex state management between separate components
+- **Consistent Interface**: Same upload experience across all mapper types
+- **Reduced Complexity**: 80% reduction in form integration complexity
 
-#### **10.5.2 Maintainability**
-- Clear separation of concerns
-- Each component has single responsibility
-- Easier debugging with clear state ownership
-- Cleaner, more readable code
+#### **10.5.2 Better User Experience**
+- **Seamless Transition**: No jarring component switches from upload to mapping
+- **Consistent Workflow**: Same upload process for all mapper types
+- **Real Upload Functionality**: Users can actually upload files in form workflows
+- **Unified Interface**: Single component handles all data input methods
 
-#### **10.5.3 Architecture Benefits**
-- Proper data flow from mappers → explorer → renderer
-- UI state managed in one place (JsonExplorer)
-- Rendering optimized with useMemo (JsonRenderer)
-- Data processing isolated in mappers
+#### **10.5.3 Improved Maintainability**
+- **Self-Contained Components**: Mappers are independent and reusable
+- **Easier Testing**: Single component to test upload and mapping functionality
+- **Cleaner Forms**: Forms only need to handle data callbacks, not upload logic
+- **Better Code Organization**: Upload logic lives where it's used
+
+#### **10.5.4 Performance Benefits**
+- **No Component Switching**: Eliminates re-mounting and re-initialization
+- **Optimized State Management**: Upload state managed internally by mappers
+- **Reduced Re-renders**: No complex conditional rendering in forms
+- **Better Memory Usage**: Single component instance instead of multiple
 
 ### 10.6 Files to Modify
 
-**Type Definitions**:
-1. `types/json.ts`
-
 **Mapper Components**:
-2. `components/json/response/json-result-mapper.tsx`
-3. `components/json/request/json-request-mapper.tsx`
-4. `components/json/response/json-response-mapper.tsx`
+1. `components/json/request/json-request-mapper.tsx`
+2. `components/json/response/json-response-mapper.tsx`
+3. `components/json/response/json-result-mapper.tsx`
 
-**Interface Components**:
-5. `components/json/interface/json-explorer.tsx`
-6. `components/json/interface/json-renderer.tsx`
+**Form Components**:
+4. `components/forms/run-request-form.tsx`
+5. `components/forms/status-check-form.tsx`
+6. `components/forms/delivery-form.tsx`
 
-**Child Components**:
-7. `components/accordions/json-accordion.tsx`
-8. `components/json/node/json-node.tsx`
-
-**Utility Files**:
-9. `utils/json/mapping-utils.tsx`
-10. `utils/json/rendering-utils.tsx`
+**No Changes Needed**:
+- `components/accordions/source-request-response-accordion.tsx` (already passes mappers as props)
+- `components/json/interface/source-body-upload.tsx` (used internally by mappers)
 
 ### 10.7 Validation Criteria
 
 **Success Indicators**:
-- No "Maximum update depth exceeded" errors
-- No circular dependency warnings
-- Components render once and complete processing
-- Clear separation of concerns
-- UI state managed in JsonExplorer only
-- Data processing isolated in mappers
-- Rendering optimized with useMemo in JsonRenderer
-- No console.log statements in production code
-- Better performance with minimal re-renders
+- Upload functionality works in all three mapper types
+- Seamless transition from upload to mapping mode
+- Forms can upload files and process them through mappers
+- No complex orchestration state needed in forms
+- Consistent upload experience across all mappers
+- Mappers handle both upload and mapping internally
+- Forms only need to handle data callbacks
 
 **Testing Approach**:
-- Monitor terminal output for infinite re-renders
-- Verify component responsibilities are clear
-- Test UI state management in JsonExplorer
-- Test data processing in mappers
-- Test rendering performance with useMemo optimization in JsonRenderer
-- Confirm no console.log statements remain
+- Test file upload in JsonRequestMapper, JsonResponseMapper, JsonResultMapper
+- Test text input in all mapper types
+- Test API request functionality in all mapper types
+- Test seamless transition from upload to mapping
+- Test form integration with all three form types
+- Verify no placeholder text appears when upload is enabled
+- Confirm data flows correctly from upload to mapping
 
 ### 10.8 Critical Implementation Notes
 
 **DO NOT**:
-- Mix UI state with data state
-- Handle user interactions in mappers
-- Manage internal state in child components
-- Leave console.log statements in production code
-- Create circular dependencies between components
+- Create separate upload components for each mapper
+- Mix upload state with mapping state in forms
+- Use complex conditional rendering in forms
+- Duplicate upload logic across components
+- Leave dead code in forms
 
 **DO**:
-- Keep mappers focused on data processing only
-- Manage all UI state in JsonExplorer
-- Make child components fully controlled
-- Implement proper separation of concerns
-- Clean up all debugging code
-- Test each component's responsibility independently
+- Integrate upload functionality directly into mappers
+- Make data prop optional in all mappers
+- Handle upload state internally in mappers
+- Use consistent upload interface across all mappers
+- Keep forms simple with just data callbacks
+- Test upload functionality in actual form workflows
 
-This architectural redesign will create a clean, maintainable, and performant system that properly separates data processing, UI state management, and rendering concerns.
+This integration approach eliminates the need for complex form orchestration while providing seamless upload-to-mapping functionality directly in the mapper components.
 
-## Phase 11: Source Body Upload Component Redesign
+### 10.9 SourceBodyUpload Component Integration
 
-### Analysis of Current Mappers
+**File**: `components/json/interface/source-body-upload.tsx`
 
-#### JsonResultMapper
-- **Data Input**: `data: any` prop - expects raw JSON data
-- **Processing**: Uses `generatePathData(data)` to create basePaths and fullPaths
-- **Mapping Type**: Object/datapoint mappings from source-mappings.json
-- **Output**: `onProcessedData` callback with processed data and statistics
+**Component Status**:
+- Component remains as standalone component
+- Used internally by enhanced mapper components
+- Available for showcase pages and other use cases
+- No changes needed to existing implementation
 
-#### JsonRequestMapper  
-- **Data Input**: `data: any` prop - expects raw JSON data
-- **Processing**: Uses `generatePathData(data)` + variable mapping functions
-- **Mapping Type**: Request variable mappings from template JSONs
-- **Output**: `onProcessedData` callback with processed data and statistics
+**Integration Pattern**:
+- Enhanced mappers import and use SourceBodyUpload internally
+- When `data` is null/undefined and `showUpload` is true: render SourceBodyUpload
+- SourceBodyUpload calls `onJsonDataChange` callback with uploaded data
+- Mapper processes the data through existing mapping pipeline
+- Seamless transition from upload UI to mapping UI
 
-#### JsonResponseMapper
-- **Data Input**: `data: any` prop - expects raw JSON data  
-- **Processing**: Uses `generatePathData(data)` + response variable mapping functions
-- **Mapping Type**: Response variable mappings from template JSONs
-- **Output**: `onProcessedData` callback with processed data and statistics
+**Benefits**:
+- **Reusability**: SourceBodyUpload remains available for other use cases
+- **Maintainability**: Single source of truth for upload functionality
+- **No Duplication**: Enhanced mappers leverage existing, tested component
+- **Clear Separation**: Upload and mapping concerns remain separate
 
+This completes the mapper component enhancement by integrating SourceBodyUpload functionality directly into the mapper components while keeping the component reusable.
 
-### Redesigned Component Architecture
+## Phase 11: SourceBodyUpload Integration with Manual Transition Control (CRITICAL)
 
-#### Simple 3-Section Layout
+**Goal**: Add manual transition control to SourceBodyUpload component and fix file management issues.
+
+### 11.1 Current Architecture Analysis
+
+**Actual Architecture**:
+- **Forms** → **Accordions** → **Mappers** → **SourceBodyUpload** (when no data) OR **JsonExplorer** (when data exists)
+- Mappers already have SourceBodyUpload integrated but missing transition control
+- SourceBodyUpload handles file upload and text input
+- Missing: Continue button to switch from upload to mapping
+- Problem: FormDragDrop has JSON parsing logic that should be in SourceBodyUpload
+
+**Current State**:
+- Mappers show SourceBodyUpload when `!data && showUpload`
+- SourceBodyUpload handles file upload and text input
+- No manual transition control - automatic switching based on data
+- FormDragDrop has JSON parsing logic that should be in SourceBodyUpload
+
+### 11.2 Required Changes
+
+#### **11.2.1 SourceBodyUpload Component Updates**
+
+**File**: `components/json/interface/source-body-upload.tsx`
+
+**New Props** (lines 22-34):
 ```typescript
 interface SourceBodyUploadProps {
-  label?: string
-  description?: string
-  maxFiles?: number
-  maxSize?: number
-  className?: string
-  onJsonDataChange: (data: {
-    files: Array<{id: string, name: string, content: any}>
-    activeFile?: string
-    textData?: string
-    combinedData?: any
-  }) => void
+  // ... existing props
+  onJsonShow?: () => void  // Callback for continue button
+  fixedHeight?: string     // Fixed height for consistent layout
 }
 ```
 
-#### Three Main Sections
-1. **Get by Request Section**
-   - PrimaryButton with dynamic text based on mapper type
-   - Simple loading state during request
-   - Error display for failed requests
-   - No complex logic - just button and states
+**Continue Button** (after line 350):
+- Add conditional "Continue - setup mappings" button
+- Show when: `jsonFiles.length > 0 || hasValidTextData`
+- Call `onJsonShow` callback
 
-2. **Upload File Section**  
-   - FormDragDrop component (existing)
-   - FileBadge components for uploaded files (existing)
-   - Simple file management without complex state
+**Save as JSON File Button** (in text tab, around line 333):
+- Add "Save as JSON file" button (secondarybutton) when text input has valid JSON
+- Create real downloadable .json file using Blob
 
-3. **Paste as Text Section**
-   - FormTextarea component (existing)
-   - JSON validation and parsing
-   - Simple edit/view mode toggle
+**Fixed Height** (line 209):
+- Add `fixedHeight` prop with default "min-h-[400px]"
+- Apply to main container
 
-#### State Management (Simplified)
+**JSON Processing** (lines 258-269):
+- Remove `validateJson` and `onJsonParsed` from FormDragDrop usage
+- Move JSON parsing logic from FormDragDrop to SourceBodyUpload
+
+#### **11.2.2 FormDragDrop Component Simplification**
+
+**File**: `components/forms/blocks/drag-drop-upload.tsx`
+
+**Remove JSON Logic**:
+- Remove `validateJson` prop (line 30)
+- Remove `onJsonParsed` prop (line 31)
+- Remove `validateJsonContent` function (lines 89-120)
+- Remove JSON validation in `handleFiles` (lines 149-172)
+- Remove file list rendering (lines 302-370)
+
+**Simplify handleFiles** (lines 122-176):
+- Only validate file size and type
+- Pass raw File objects to onChange
+- No JSON parsing or validation
+
+#### **11.2.3 FileBadge Component Enhancement**
+
+**File**: `components/ui/custom-ui-elements/badges/file-badge.tsx`
+
+**Make Entire Area Clickable** (lines 49-77):
+- Add `onClick={onRemove}` to main container div (line 50)
+- Add `cursor-pointer` and `hover:bg-destructive/10` classes
+- Remove `onClick={onSelect}` from span (line 62)
+
+### 11.3 Mapper Integration
+
+#### **11.3.1 Mapper State Management**
+**Current Problem**: Mappers have SourceBodyUpload but missing transition control
+**Correct Approach**: Add continue button callback and transition logic
+
+**Required Changes in Mappers**:
+- Add `onJsonShow` callback prop to SourceBodyUpload usage
+- Add `handleJsonShow` function to switch from upload to mapping
+- Add `height` prop for consistent layout
+
+**Files to Modify**:
+- `components/json/request/json-request-mapper.tsx` (lines where SourceBodyUpload is used)
+- `components/json/response/json-response-mapper.tsx` (lines where SourceBodyUpload is used)
+- `components/json/response/json-result-mapper.tsx` (lines where SourceBodyUpload is used)
+
+#### **11.3.2 Transition Logic**
+**Current Problem**: No way to switch from upload to mapping
+**Correct Approach**: Continue button triggers transition
+
+**Handler Logic**:
+- `handleJsonShow`: Set `showUpload = false`, trigger mapping processing
+- Show JsonExplorer with first active file from Mappers
+
+### 11.4 Files to Modify
+
+**Core Components**:
+1. `components/json/interface/source-body-upload.tsx` - Add continue button, save button for text tab, fixed height
+2. `components/forms/blocks/drag-drop-upload.tsx` - Remove JSON logic, simplify file handling
+3. `components/ui/custom-ui-elements/badges/file-badge.tsx` - Make entire area clickable
+
+**Mapper Components**:
+4. `components/json/request/json-request-mapper.tsx` - Add continue button callback
+5. `components/json/response/json-response-mapper.tsx` - Add continue button callback
+6. `components/json/response/json-result-mapper.tsx` - Add continue button callback
+
+**No Changes Needed**:
+- `components/accordions/source-request-response-accordion.tsx` - Already passes mappers as props
+- Form components - Mappers handle upload internally
+
+### 11.5 Implementation Priority
+
+**Critical**:
+1. Add `onJsonShow` prop and continue button to SourceBodyUpload
+2. Remove JSON parsing from FormDragDrop
+3. Make FileBadge entire area clickable
+4. Add continue button callbacks to all three mappers
+
+**High**:
+1. Add "Save as JSON file" button for text input
+2. Implement fixed height for consistent layout
+3. Move JSON processing logic to SourceBodyUpload
+
+
+### 11.6 Expected Behavior
+
+**Initial Load**:
+- Mapper shows SourceBodyUpload when no data
+- User uploads files or pastes text
+- "Continue - setup mappings" button appears when valid data exists
+
+**Continue Button Click**:
+- Calls `onJsonShow` callback
+- Mapper switches from SourceBodyUpload to JsonExplorer
+- Shows first active file from uploaded data
+- Seamless transition from upload UI to mapping UI
+
+**File Management**:
+- FormDragDrop only handles file selection (no JSON parsing)
+- SourceBodyUpload handles all JSON processing
+- Entire FileBadge area is clickable for deletion
+- "Save as JSON file" creates real downloadable files
+
+### 11.7 Validation Criteria
+
+**Success Indicators**:
+- Continue button appears when valid data is uploaded
+- Clicking continue button switches from SourceBodyUpload to JsonExplorer
+- First active file is displayed in JsonExplorer
+- FormDragDrop only handles file selection, no JSON parsing
+- Entire FileBadge area is clickable for deletion
+- "Save as JSON file" creates real downloadable files
+- Fixed height container maintains consistent layout
+
+**Testing Approach**:
+- Test file upload in all three mapper types
+- Test text input and "Save as JSON file" functionality
+- Test "Continue" button transition to mapper view
+- Test FileBadge deletion with entire area clickable
+- Test FormDragDrop with various file types (non-JSON should be rejected)
+- Test SourceBodyUpload with invalid JSON (should show error)
+- Test fixed height container with different content states
+- Verify no automatic transitions occur without user action
+
+### 11.8 Critical Implementation Notes (CORRECTED)
+
+**DO NOT**:
+- Use automatic transitions from upload to mapping
+- Keep JSON parsing logic in FormDragDrop
+- Create virtual files for text input
+- Make only the "×" button clickable in FileBadge
+- Use variable height containers
+
+**DO**:
+- Use manual transition control with continue button
+- Move all JSON processing to SourceBodyUpload
+- Create actual downloadable .json files
+- Make entire FileBadge area clickable for deletion
+- Use fixed height containers for consistent layout
+- Test all functionality in actual form workflows
+- Ensure proper separation of concerns between components
+
+This phase provides a clean, user-controlled approach to JSON upload and mapping integration while maintaining proper separation of concerns and improving the overall user experience.
+
+## Phase 12: Fix Flat Array Rendering Issue (CRITICAL)
+
+**Goal**: Fix JsonRenderer to properly render all array items in flat arrays instead of only the first item.
+
+### 12.1 Current Problem
+
+**Issue**: JsonRenderer only renders the first array item when processing flat arrays like `[{item0}, {item1}, {item2}, ...]`
+
+**Root Cause**: JsonRenderer architecture assumes hierarchical JSON structures with parent-child relationships, but flat arrays have sibling relationships at the same level.
+
+**Current Logic**:
+1. Find root basePath (shortest path = "0")
+2. Look for children of "0" (paths starting with "0." or "0[")
+3. Array items 1-9 are siblings of "0", not children
+4. Result: Only item "0" gets rendered
+
+### 12.2 Required Changes
+
+#### 12.2.1 JsonRenderer Component Updates
+
+**File**: `components/json/interface/json-renderer.tsx`
+
+**Current Logic (lines 45-65)**:
 ```typescript
-// Only essential state
-const [jsonFiles, setJsonFiles] = useState<JsonFile[]>([])
-const [activeFileId, setActiveFileId] = useState<string | null>(null)
-const [textInput, setTextInput] = useState<string>("")
-const [isRequesting, setIsRequesting] = useState<boolean>(false)
-const [requestError, setRequestError] = useState<string>("")
+const rootBasePath = Object.keys(basePaths)
+  .sort((a, b) => a.length - b.length)[0] // Selects shortest path as root
+
+const renderAccordionWithChildren = (basePath: string): React.ReactNode => {
+  const directChildren = findNestedLevel(basePath, allBasePaths)
+  // ... renders only children of basePath
+}
 ```
 
-### Implementation Plan
+**New Logic**:
+```typescript
+const rootBasePaths = getRootBasePaths(basePaths) // Get all root-level paths
 
-#### Step 1: Create New Component Structure
-- Create new `source-body-upload.tsx` in `components/json/interface/` directory
-- Implement proper tab system with 3 tabs: "Get by Request", "Upload File", "Paste as Text"
-- Use existing components: FormDragDrop, FormTextarea, PrimaryButton, FileBadge
-- Implement clean state management with only 5 state variables
+const renderAccordionWithChildren = (basePath: string): React.ReactNode => {
+  const directChildren = findNestedLevel(basePath, allBasePaths)
+  // ... renders children of basePath
+}
 
-#### Step 2: Implement Core Features
-- **Get by Request**: Simple button with loading/error states
-- **Upload File**: Use FormDragDrop with file management
-- **Paste as Text**: Use FormTextarea with JSON validation
-- **JSON Rendering**: Single JsonView component for all sections
+const renderRootLevel = (): React.ReactNode => {
+  return rootBasePaths.map(basePath => {
+    const result = renderAccordionWithChildren(basePath)
+    return result
+  })
+}
+```
 
-#### Step 3: Data Flow Integration
-- Single `onJsonDataChange` callback for all input methods
-- Consistent data structure: `{files, activeFile, textData, combinedData}`
-- Automatic JSON parsing and validation
-- Clean integration with existing mapper components
+**New Function**: `getRootBasePaths(basePaths)`
+- Purpose: Identify all root-level basePaths in flat arrays
+- Logic: Find basePaths that are not children of any other basePath
+- Return: Array of root-level basePath strings
 
-#### Step 4: Remove Cursor Issues
-- No custom tab components
-- No complex hover states
-- Use existing UI components without modifications
-- Simple CSS transitions only
+#### 12.2.2 New Utility Function
 
-#### Step 5: Testing and Validation
-- Test with all three mapper types
-- Verify data flow from input to mapper
-- Test error handling and edge cases
-- Performance testing for large JSON files
+**File**: `utils/json/rendering-utils.tsx`
 
-### Expected Benefits
-- **Simplified Architecture**: 80% reduction in component complexity
-- **Better Performance**: No cursor flickering or excessive re-renders
-- **Easier Maintenance**: Clear separation of concerns
-- **Better Integration**: Seamless integration with existing mappers
-- **Reusable Components**: Leverages existing FormDragDrop, FormTextarea, etc.
+**Add Function**:
+```typescript
+export function getRootBasePaths(basePaths: Record<string, BasePathData>): string[] {
+  const allPaths = Object.keys(basePaths)
+  const rootPaths: string[] = []
+  
+  for (const path of allPaths) {
+    const isChild = allPaths.some(otherPath => 
+      otherPath !== path && 
+      (otherPath.startsWith(path + '.') || otherPath.startsWith(path + '['))
+    )
+    
+    if (!isChild) {
+      rootPaths.push(path)
+    }
+  }
+  
+  return rootPaths.sort((a, b) => a.length - b.length)
+}
+```
+
+#### 12.2.3 Update JsonRenderer Rendering Logic
+
+**File**: `components/json/interface/json-renderer.tsx`
+
+**Replace Current Logic (lines 45-65)**:
+```typescript
+const rootBasePath = Object.keys(basePaths)
+  .sort((a, b) => a.length - b.length)[0]
+
+if (!rootBasePath) return { rootAccordion: null, nestedAccordions: [] }
+
+const allBasePaths = Object.keys(basePaths)
+
+const renderAccordionWithChildren = (basePath: string): React.ReactNode | { accordion: React.ReactNode, progressBar: React.ReactNode } => {
+  // ... existing logic
+}
+
+const rootResult = renderAccordionWithChildren(rootBasePath)
+```
+
+**With New Logic**:
+```typescript
+const rootBasePaths = getRootBasePaths(basePaths)
+
+if (rootBasePaths.length === 0) return { rootAccordion: null, nestedAccordions: [] }
+
+const allBasePaths = Object.keys(basePaths)
+
+const renderAccordionWithChildren = (basePath: string): React.ReactNode | { accordion: React.ReactNode, progressBar: React.ReactNode } => {
+  // ... existing logic
+}
+
+const renderRootLevel = (): React.ReactNode => {
+  return rootBasePaths.map(basePath => {
+    const result = renderAccordionWithChildren(basePath)
+    if (result && typeof result === 'object' && 'accordion' in result) {
+      return result.accordion
+    }
+    return result
+  })
+}
+
+const rootAccordions = renderRootLevel()
+```
+
+#### 12.2.4 Update JsonRenderer Return Logic
+
+**File**: `components/json/interface/json-renderer.tsx`
+
+**Replace Current Return (lines 80-90)**:
+```typescript
+return {
+  rootAccordion: rootResult && typeof rootResult === 'object' && 'accordion' in rootResult 
+    ? rootResult.accordion 
+    : rootResult,
+  nestedAccordions: []
+}
+```
+
+**With New Return**:
+```typescript
+return {
+  rootAccordion: rootAccordions.length === 1 ? rootAccordions[0] : null,
+  nestedAccordions: rootAccordions.length > 1 ? rootAccordions : []
+}
+```
+
+### 12.3 Files to Modify
+
+1. **`components/json/interface/json-renderer.tsx`**:
+   - Add import for `getRootBasePaths`
+   - Replace root basePath selection logic
+   - Add `renderRootLevel` function
+   - Update return logic for multiple root accordions
+
+2. **`utils/json/rendering-utils.tsx`**:
+   - Add `getRootBasePaths` function
+
+### 12.4 Expected Behavior After Fix
+
+**Flat Array `[{item0}, {item1}, {item2}, ...]`**:
+- `getRootBasePaths` returns `["0", "1", "2", ...]`
+- `renderRootLevel` renders all 10 accordions
+- All array items are displayed in the UI
+
+**Hierarchical Object `{user: {profile: {name: "John"}}}`**:
+- `getRootBasePaths` returns `["user"]`
+- `renderRootLevel` renders single root accordion
+- Existing behavior preserved
+
+**Mixed Structure `{users: [{name: "John"}, {name: "Jane"}]}`**:
+- `getRootBasePaths` returns `["users"]`
+- `renderRootLevel` renders single root accordion
+- Array items rendered as children of "users"
+
+### 12.5 Validation Criteria
+
+**Success Indicators**:
+- All array items in flat arrays are rendered
+- Hierarchical objects continue to work as before
+- Mixed structures work correctly
+- No performance degradation
+- No breaking changes to existing functionality
+
+**Testing Approach**:
+- Test with flat array JSON (like source_rows.json)
+- Test with hierarchical object JSON
+- Test with mixed structure JSON
+- Verify all array items are visible and interactive
+- Confirm existing functionality still works

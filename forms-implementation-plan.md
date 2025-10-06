@@ -1628,73 +1628,472 @@ const handleJsonDataChange = (data: {
 
 ---
 
-## Phase 11: Direct Mapper Integration in Forms
+## Phase 11: Enhanced Mapper Integration with Upload Functionality
 
-#### Step 1: Update RunRequestForm
-Modify RunRequestForm to integrate mappers directly into SourceRequestResponseAccordion components.
+**Goal**: Integrate SourceBodyUpload functionality directly into mapper components and update forms to use the enhanced mappers, eliminating the need for complex form orchestration.
 
-Structure:
-- Request accordion: RequestMetadataForm + LoadBalancingForm + JsonRequestMapper
-- Response accordion: JsonResponseMapper
+#### Step 1: Enhance Mapper Components
+Update all three mapper components (JsonRequestMapper, JsonResponseMapper, JsonResultMapper) to include upload functionality:
 
-Remove:
-- SourceBodyUpload components
-- JSON data orchestration state (requestJsonData, responseJsonData, requestHasFiles, responseHasFiles)
-- JSON data change handlers (handleRequestJsonDataChange, handleResponseJsonDataChange)
+**Interface Updates**:
+- Make `data` prop optional (`data?: any`)
+- Add `showUpload?: boolean` prop (default: true)
+- Add `uploadLabel?: string` prop for customization
+- Add `onDataChange?: (data: any) => void` callback
 
-Keep:
-- RequestMetadataForm for method, URL, headers
-- LoadBalancingForm for concurrency and timeout
-- JsonRequestMapper for request JSON mapping
-- JsonResponseMapper for response JSON mapping
+**Upload Integration**:
+- When `data` is null/undefined AND `showUpload` is true: render SourceBodyUpload component
+- When `data` exists: process through existing mapper logic
+- Handle seamless transition from upload to mapping mode
+- Process uploaded data through existing mapper pipeline
 
-#### Step 2: Update StatusCheckForm
-Modify StatusCheckForm to integrate mappers directly into SourceRequestResponseAccordion components.
+**State Management**:
+- Add upload state: `jsonFiles`, `activeFileId`, `textInput`, `isRequesting`, `requestError`
+- Handle data flow from upload to mapper processing internally
+- Call `onDataChange` when data becomes available from upload
 
-Structure:
-- Request accordion: RequestMetadataForm + JsonRequestMapper
-- Response accordion: JsonResponseMapper
+#### Step 2: Update RunRequestForm
+Modify RunRequestForm to use enhanced mapper components:
 
-Remove:
-- SourceBodyUpload components
-- JSON data orchestration state
-- JSON data change handlers
+**Remove Dead Code**:
+- Remove `requestJsonData` and `responseJsonData` from form state
+- Remove `handleRequestJsonDataChange` and `handleResponseJsonDataChange` handlers
+- Remove conditional rendering logic for upload/mapping
 
-Keep:
-- RequestMetadataForm for status URL, method, headers
-- JsonRequestMapper for request JSON mapping
-- JsonResponseMapper for response JSON mapping
+**Update Mapper Integration**:
+- Pass `data={formData.requestJsonData}` to JsonRequestMapper (can be null)
+- Pass `data={formData.responseJsonData}` to JsonResponseMapper (can be null)
+- Add `onDataChange` callbacks to update form state
+- Add `showUpload={true}` and `uploadLabel` props
 
-#### Step 3: Update DeliveryForm
-Modify DeliveryForm to integrate mappers directly into SourceRequestResponseAccordion components.
+**Simplify Form Logic**:
+- Remove placeholder text rendering
+- Let mappers handle upload/mapping display internally
+- Forms only need to handle data callbacks
 
-Structure:
-- Request accordion: RequestMetadataForm + JsonRequestMapper
-- Response accordion: JsonResultMapper
+#### Step 3: Update StatusCheckForm
+Apply identical changes as RunRequestForm:
+- Same dead code removal
+- Same mapper integration updates
+- Same form logic simplification
 
-Remove:
-- SourceBodyUpload components
-- JSON data orchestration state
-- JSON data change handlers
+#### Step 4: Update DeliveryForm
+Apply identical changes as RunRequestForm:
+- Same dead code removal
+- Same mapper integration updates
+- Same form logic simplification
+- Note: Uses JsonResultMapper for response mapping instead of JsonResponseMapper
 
-Keep:
-- RequestMetadataForm for delivery URL, method, headers
-- JsonRequestMapper for request JSON mapping
-- JsonResultMapper for response JSON mapping
+#### Step 5: Update SourceRequestResponseAccordion
+**No Changes Needed**:
+- Accordion already passes mapper components as props
+- Mappers handle upload functionality internally
+- Accordion just renders the mapper components
+- No upload-specific logic needed in accordion
 
-#### Step 4: Update SourceRequestResponseAccordion
-Modify SourceRequestResponseAccordion to accept mapper components as props instead of managing SourceBodyUpload internally.
+#### Step 6: Keep SourceBodyUpload Component
+**Keep Component**:
+- Component remains as standalone component
+- Used internally by enhanced mapper components
+- Available for showcase pages and other use cases
+- No changes needed to existing implementation
 
-Add props:
-- requestMapper: React.ReactNode for request section content
-- responseMapper: React.ReactNode for response section content
+### 11.7 Expected Results After Integration
 
-Remove:
-- SourceBodyUpload integration
-- JSON data management
-- File upload handling
+#### **11.7.1 Form Behavior**
+- Forms show upload interface when no data is available
+- Forms show mapping interface when data is available
+- Seamless transition between upload and mapping modes
+- No placeholder text or dead functionality
+- Clean, simple form logic
 
-#### Step 5: Remove SourceBodyUpload Component
-Delete the source-body-upload.tsx file entirely since it's no longer needed.
+#### **11.7.2 User Experience**
+- Users can upload files directly in form workflows
+- Consistent upload experience across all mapper types
+- No jarring component switches
+- Real functionality instead of placeholder text
+- Unified interface for all data input methods
 
-Update all imports that reference source-body-upload to remove them.
+#### **11.7.3 Code Quality**
+- Eliminated dead code and unused handlers
+- Simplified form logic and state management
+- Consistent patterns across all forms
+- Better maintainability and readability
+- Reduced complexity and potential bugs
+
+### 11.8 Files to Modify
+
+**Form Components**:
+1. `components/forms/run-request-form.tsx`
+2. `components/forms/status-check-form.tsx`
+3. `components/forms/delivery-form.tsx`
+
+**No Changes Needed**:
+- `components/accordions/source-request-response-accordion.tsx`
+- `components/json/interface/source-body-upload.tsx`
+
+### 11.9 Validation Criteria
+
+**Success Indicators**:
+- All forms can upload files and process them through mappers
+- No placeholder text appears in form workflows
+- Seamless transition from upload to mapping in all forms
+- No dead code or unused functionality remains
+- Consistent upload experience across all mapper types
+- Forms are simpler and easier to maintain
+
+**Testing Approach**:
+- Test file upload in all three form types
+- Test text input in all form types
+- Test API request functionality in all form types
+- Verify no placeholder text appears
+- Confirm seamless transition from upload to mapping
+- Test form submission with uploaded data
+- Verify data flows correctly through entire workflow
+
+### 11.10 Critical Implementation Notes
+
+**DO NOT**:
+- Leave dead code or unused handlers in forms
+- Use complex conditional rendering in forms
+- Duplicate upload logic across forms
+- Remove SourceBodyUpload component (keep for internal use)
+
+**DO**:
+- Remove all dead code and unused functionality
+- Simplify form logic to just data callbacks
+- Use consistent patterns across all forms
+- Test upload functionality in actual form workflows
+- Verify seamless integration with enhanced mappers
+
+This phase completes the form integration by updating forms to work seamlessly with the enhanced mapper components that include upload functionality.
+
+## Phase 12: Visual Component Updates and UX Enhancements
+
+### Overview
+Update visual styling and user experience across multiple components including tabs, drag-drop upload, source body upload, and select components with specific shadow effects, typography changes, and interaction improvements.
+
+### Executive Summary
+
+**Goal**: Enhance visual consistency and user experience across form components with specific shadow effects, typography improvements, and interaction states.
+
+**Solution**: Update four key components with precise visual specifications including shadow systems, typography scaling, content restructuring, and interaction improvements.
+
+**Key Features**:
+1. **Tabs Component**: XL drop shadow with inner shadows for active tabs, typography scaling, and hover states
+2. **Drag-Drop Upload**: Background styling, thinner borders, secondary button integration, and content restructuring
+3. **Source Body Upload**: Tab content alignment, conditional visibility, fixed height management, and transition timing
+4. **Select Component**: Pointer cursor for dropdown interactions
+
+**User Experience**:
+Consistent visual hierarchy with proper shadow depth, improved typography scaling, better content organization, and enhanced interaction feedback across all form components.
+
+**Technical Approach**:
+- Apply existing shadow utility classes with specific sizing and positioning
+- Implement typography scaling using Tailwind text size classes
+- Restructure content layout with proper spacing and alignment
+- Add conditional visibility props for flexible component usage
+- Enhance interaction states with appropriate cursor and hover effects
+
+### 12.1 Tabs Component Visual Updates
+
+**File**: `components/ui/custom-ui-elements/buttons/tabs.tsx` (MODIFY)
+
+**Current State Analysis** (lines 16-32):
+- Container: `flex space-x-1 rounded-lg bg-muted p-1` (line 18)
+- Button styling: `variant={tab.isActive ? "default" : "ghost"}` with `size="sm"` (lines 22-23)
+- Active button: `bg-interactive text-foreground` (line 25)
+- Transition: `transition-all` (line 25)
+
+**Required Changes**:
+
+**Container Shadow Enhancement** (modify line 18):
+- Current: `"flex space-x-1 rounded-lg bg-muted p-1"`
+- New: `"flex space-x-1 rounded-lg bg-interactive p-1 shadow-default"`
+- Change background to `bg-interactive` and add outer XL drop shadow using existing `shadow-default` utility class
+
+**Active Tab Inner Shadow and Border** (modify line 25):
+- Current: `"flex-1 transition-all", tab.isActive && "bg-background text-foreground"`
+- New: `"flex-1 transition-all", tab.isActive && "bg-interactive text-foreground shadow-inset-default border"`
+- Add inner shadow using existing `shadow-inset-default` utility class and border for active tabs
+- Inactive tabs: No border (default state)
+
+**Typography Scaling** (modify line 25):
+- Current: No specific text size classes
+- New: Add text size classes for active/inactive states
+- Active tabs: `text-base` (larger font)
+- Inactive tabs: `text-sm` (smaller font)
+- Implementation: `tab.isActive ? "text-base" : "text-sm"`
+
+**Hover State Enhancement** (modify line 25):
+- Current: No hover-specific styling
+- New: Add hover state with text color change and blue inner shadow
+- Hover text: Use existing text button hover pattern
+- Hover shadow: `hover:shadow-inset-hover-primary`
+- Implementation: Add `hover:text-primary hover:shadow-inset-hover-primary` classes
+
+**Complete Updated Button Styling** (line 25):
+```typescript
+className={cn(
+  "flex-1 transition-all",
+  tab.isActive 
+    ? "bg-interactive text-foreground text-base shadow-inset-default border" 
+    : "text-sm",
+  "hover:text-primary hover:shadow-inset-hover-primary"
+)}
+```
+
+### 12.2 Drag-Drop Upload Component Visual Updates
+
+**File**: `components/forms/blocks/drag-drop-upload.tsx` (MODIFY)
+
+**Current State Analysis** (lines 154-210):
+- Container: `border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200` (line 156)
+- Hover states: `hover:border-primary/50 hover:bg-muted/50 hover:shadow-hover-primary` (line 157)
+- Content structure: Upload icon, placeholder text, format info, size info, files info (lines 180-210)
+
+**Required Changes**:
+
+**Background Styling** (modify line 156):
+- Current: No background class
+- New: Add `bg-interactive` class for consistent background
+- Updated: `"border border-dashed rounded-lg p-6 text-center transition-all duration-200 bg-interactive"`
+
+**Border Thickness and Color** (modify line 156):
+- Current: `border-2 border-dashed`
+- New: `border border-dashed` (thinner border)
+- Color: Use standard border color (existing `border` class)
+
+**Default Shadow** (modify line 156):
+- Current: No default shadow
+- New: Add `shadow-default` for consistent drop shadow
+- Updated: `"border border-dashed rounded-lg p-6 text-center transition-all duration-200 bg-interactive shadow-default"`
+
+**Hover State Update** (modify line 157):
+- Current: `hover:border-primary/50 hover:bg-muted/50 hover:shadow-hover-primary`
+- New: Keep blue shadow, remove background change
+- Updated: `hover:shadow-hover-primary`
+
+**Content Restructuring** (modify lines 180-210):
+- Current: Single paragraph with placeholder text
+- New: Multi-line content structure with secondary button
+- Line 1: "Drop .json files here or" (text)
+- Line 2: "Browse files" (SecondaryButton component)
+- Line 3: "5 files, 10MBs each maximum" (constraint info)
+
+**Remove Description Section** (modify lines 221-223):
+- Current: Conditional description rendering
+- New: Remove entire description section
+- Delete lines 221-223: `{description && (<p className="text-xs text-muted-foreground">{description}</p>)}`
+
+**Add Secondary Button** (modify lines 180-210):
+- Import SecondaryButton component at top of file
+- Add button after upload icon and before constraint text
+- Button text: "Browse files"
+- Button styling: Use existing SecondaryButton component
+- Button functionality: NONE - purely visual indicator, whole drag-drop area is interactive
+- Button will change hover state with the whole drag-drop area (blue dropshadow)
+
+**Add Pointer Cursor** (modify line 156):
+- Current: No cursor specification
+- New: Add `cursor-pointer` class
+- Updated: `"border border-dashed rounded-lg p-6 text-center transition-all duration-200 bg-interactive shadow-default cursor-pointer"`
+
+**Updated Content Structure** (lines 180-210):
+```typescript
+<div className="space-y-2">
+  <Upload className={cn(
+    "h-8 w-8 mx-auto",
+    isDragOver ? "text-primary" : "text-muted-foreground"
+  )} />
+  
+  <div className="space-y-1">
+    <p className={cn(
+      "text-sm",
+      isDragOver ? "text-primary font-medium" : "text-muted-foreground"
+    )}>
+      Drop .json files here or
+    </p>
+    
+    <SecondaryButton
+      onClick={handleBrowseClick}
+      size="sm"
+      className="mx-auto"
+    >
+      Browse files
+    </SecondaryButton>
+    
+    <p className="text-xs text-muted-foreground">
+      {maxFiles} files, {maxSize}MBs each maximum
+    </p>
+  </div>
+</div>
+```
+
+### 12.3 Source Body Upload Component Updates
+
+**File**: `components/json/interface/source-body-upload.tsx` (MODIFY)
+
+**Current State Analysis** (lines 268-358):
+- Tabs structure: Three tabs (request, upload, text) with TabsList and TabsContent (lines 268-273)
+- Request tab: Centered content with Card wrapper (lines 276-303)
+- Upload tab: FormDragDrop component (lines 306-317)
+- Text tab: Textarea with validation and save button (lines 320-357)
+
+**Required Changes**:
+
+**Add Conditional Visibility Props** (modify interface lines 23-37):
+- Current: No visibility props
+- New: Add props to control tab visibility
+- Add to SourceBodyUploadProps interface:
+```typescript
+showRequestTab?: boolean
+showUploadTab?: boolean  
+showTextTab?: boolean
+```
+- Default values: `showRequestTab: false`, `showUploadTab: true`, `showTextTab: true`
+
+**Request Tab Content Alignment** (modify lines 276-303):
+- Current: `text-center` class on Card content (line 279)
+- New: Change to `text-left` for left alignment
+- Updated: `<div className="space-y-4">` (remove text-center)
+
+**Fixed Height Management** (modify line 268):
+- Current: `fixedHeight = "min-h-[400px]"` (line 45)
+- New: Calculate proper fixed height considering all elements and states
+- Keep fixed height on Tabs container to prevent layout shifts
+- Calculate height to accommodate: tabs header + content area + "Uploaded Files" section
+- Account for different states: empty state, with files, validation states
+- Ensure height remains consistent regardless of file uploads or content changes
+
+**Tab Visibility Implementation** (modify lines 268-273):
+- Current: Hardcoded three TabsTrigger elements
+- New: Conditional rendering based on props with tab container hiding
+- Count visible tabs: `const visibleTabsCount = [showRequestTab, showUploadTab, showTextTab].filter(Boolean).length`
+- Hide TabsList when only one tab is visible: `{visibleTabsCount > 1 && (<TabsList>...)}`
+- Implementation:
+```typescript
+const visibleTabsCount = [showRequestTab, showUploadTab, showTextTab].filter(Boolean).length
+
+<Tabs defaultValue="upload" className={cn("w-full", fixedHeight)}>
+  {visibleTabsCount > 1 && (
+    <TabsList className="grid w-full grid-cols-3">
+      {showRequestTab && <TabsTrigger value="request">Get by Request</TabsTrigger>}
+      {showUploadTab && <TabsTrigger value="upload">Upload File</TabsTrigger>}
+      {showTextTab && <TabsTrigger value="text">Paste as Text</TabsTrigger>}
+    </TabsList>
+  )}
+```
+
+**Text Tab Transition Timing** (modify lines 331-355):
+- Current: Validation feedback shows immediately on text input
+- New: Only show transition after "Save as JSON file" button click
+- Remove immediate validation display
+- Keep validation logic but only show UI feedback after save action
+
+**Height Constraint Implementation**:
+- Keep `fixedHeight` prop on Tabs container (line 268) for layout stability
+- Calculate appropriate height value considering:
+  - TabsList height (~40px)
+  - Content area height (varies by tab type)
+  - "Uploaded Files" section height when visible (~80px)
+  - Padding and spacing between elements
+- Apply `min-h-[200px]` to textarea (line 328) - already exists
+- Ensure consistent height regardless of content state changes
+
+### 12.4 Select Component Cursor Update
+
+**File**: `components/ui/custom-ui-elements/inputs/select.tsx` (MODIFY)
+
+**Current State Analysis** (lines 66-78 and 142-153):
+- SelectTrigger styling: Multiple className applications with shadow and transition classes
+- Current cursor: No specific cursor class applied
+
+**Required Changes**:
+
+**Add Pointer Cursor and Background to SelectTrigger** (modify lines 67-72 and 143-148):
+- Current: No cursor specification or background class
+- New: Add `cursor-pointer` class and `bg-interactive` background to both FormSelect and FormFieldSelect components
+- Updated className for FormSelect (lines 67-72):
+```typescript
+className={cn(
+  getShadowClass(),
+  'transition-shadow duration-200',
+  disabled && 'opacity-50 cursor-not-allowed',
+  'data-[placeholder]:text-muted-foreground',
+  'bg-interactive cursor-pointer' // Add these lines
+)}
+```
+- Updated className for FormFieldSelect (lines 143-148):
+```typescript
+className={cn(
+  getShadowClass(),
+  'transition-shadow duration-200',
+  disabled && 'opacity-50 cursor-not-allowed',
+  'data-[placeholder]:text-muted-foreground',
+  'bg-interactive cursor-pointer' // Add these lines
+)}
+```
+
+### 12.5 Implementation Steps
+
+**Step 1: Update Tabs Component**
+1. Add `shadow-default` to container div (line 18)
+2. Add inner shadow and typography scaling to active tabs (line 25)
+3. Add hover states with text color and inner shadow (line 25)
+4. Test visual hierarchy and interaction states
+
+**Step 2: Update Drag-Drop Upload Component**
+1. Add `bg-interactive` and `shadow-default` to container (line 156)
+2. Change border from `border-2` to `border` (line 156)
+3. Update hover states to remove background change (line 157)
+4. Add `cursor-pointer` class (line 156)
+5. Restructure content with three-line layout (lines 180-210)
+6. Add SecondaryButton component and import
+7. Remove description section (lines 221-223)
+8. Test new content structure and interactions
+
+**Step 3: Update Source Body Upload Component**
+1. Add conditional visibility props to interface (lines 23-37)
+2. Change request tab alignment from center to left (line 279)
+3. Implement conditional tab rendering (lines 269-273)
+4. Remove fixed height from Tabs container (line 268)
+5. Update text tab transition timing (lines 331-355)
+6. Test conditional visibility and alignment
+
+**Step 4: Update Select Component**
+1. Add `cursor-pointer` to FormSelect SelectTrigger (lines 67-72)
+2. Add `cursor-pointer` to FormFieldSelect SelectTrigger (lines 143-148)
+3. Test cursor behavior on both components
+
+**Step 5: Testing and Validation**
+1. Test all shadow effects and visual hierarchy
+2. Test typography scaling on tabs
+3. Test hover states and interactions
+4. Test conditional visibility in source body upload
+5. Test content restructuring in drag-drop upload
+6. Test cursor behavior on select components
+
+### 12.6 Success Criteria
+
+**Visual Consistency**:
+- All components use consistent shadow system
+- Typography scaling creates clear visual hierarchy
+- Hover states provide appropriate feedback
+
+**User Experience**:
+- Clear visual distinction between active/inactive states
+- Intuitive interaction patterns
+- Proper content organization and alignment
+
+**Functionality**:
+- Conditional visibility works correctly
+- All interactions respond appropriately
+- Content restructuring maintains usability
+
+**Code Quality**:
+- Clean implementation using existing utility classes
+- Proper prop interfaces for flexibility
+- Maintainable and consistent patterns
+
+This phase enhances the visual consistency and user experience across form components with specific shadow effects, typography improvements, and interaction enhancements.
