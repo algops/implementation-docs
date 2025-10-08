@@ -2097,3 +2097,1245 @@ className={cn(
 - Maintainable and consistent patterns
 
 This phase enhances the visual consistency and user experience across form components with specific shadow effects, typography improvements, and interaction enhancements.
+
+## Phase 13: Input and Selector Component Standardization
+
+### Overview
+Standardize all input and selector components with consistent shadow systems, status indication patterns, border styling, and background colors to create a unified visual language across all form components.
+
+### Executive Summary
+
+**Goal**: Create visual consistency across inputs and selectors through standardized shadows, status icons, borders, backgrounds, and text colors.
+
+**Solution**: Implement dual status system with colored validation shadows plus semantic status icons positioned on the right side of components.
+
+**Key Features**:
+1. **Universal Shadow System**: All components use `shadow-default` with colored validation shadows
+2. **Status Icons on Right**: Validation and semantic icons positioned right side (right-bottom for textarea)
+3. **Consistent Borders**: All use `border-muted` by default, `border-primary` on focus
+4. **Unified Backgrounds**: All use `bg-interactive` for triggers and dropdowns
+5. **Text Color States**: `text-foreground` when filled, `text-muted-foreground` for placeholders
+
+**User Experience**:
+Consistent visual feedback across all form components, clear status indication through both shadows and icons, unified interaction patterns for inputs and selectors.
+
+**Technical Approach**:
+- Apply shadow-default to all base UI components
+- Keep validation shadow system (default/success/error/warning) in custom inputs
+- Add status icon support with right-side positioning
+- Standardize border and background colors
+- Update selectors to match input visual patterns
+
+### 13.1 Universal Pattern Across ALL Components
+
+#### Status Indication System:
+1. **Colored Shadows** - Validation states (default, success, error, warning)
+2. **Status Icons** - Semantic meaning with custom colors per icon positioned on RIGHT
+
+#### Visual Standards:
+- **Default Shadow**: `shadow-default` on all components
+- **Hover Shadow**: `hover:shadow-hover-primary` on all components
+- **Border**: `border-muted` default, `border-primary` on focus
+- **Background**: `bg-interactive` for all triggers and dropdowns
+- **Text**: `text-foreground` when filled, `text-muted-foreground` for placeholder
+- **Transition**: `transition-shadow duration-200` for smooth animations
+
+### 13.2 Base UI Components Enhancement
+
+#### 13.2.1 Input Component
+**File**: `components/ui/input.tsx` (line 11)
+
+**Current State**: `border border-muted bg-interactive`
+
+**Changes Required**:
+- ➕ Add `shadow-default`
+- ➕ Add `transition-shadow duration-200`
+- ✅ Keep: `bg-interactive`, `border-muted`, `text-foreground`, `placeholder:text-muted-foreground`
+
+**Updated className**:
+```
+"flex h-10 w-full rounded-md border border-muted bg-interactive px-3 py-2 text-base shadow-default transition-shadow duration-200 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 md:text-sm hover:shadow-hover-primary"
+```
+
+#### 13.2.2 Textarea Component
+**File**: `components/ui/textarea.tsx` (line 12)
+
+**Current State**: `border border-muted bg-interactive`
+
+**Changes Required**:
+- ➕ Add `shadow-default`
+- ➕ Add `transition-shadow duration-200`
+- ✅ Keep: `bg-interactive`, `border-muted`
+
+**Updated className**:
+```
+"flex min-h-[80px] w-full rounded-md border border-muted bg-interactive px-3 py-2 text-base shadow-default transition-shadow duration-200 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 md:text-sm hover:shadow-hover-primary"
+```
+
+#### 13.2.3 Select Component
+**File**: `components/ui/select.tsx`
+
+**SelectTrigger Changes** (line 22):
+- ➕ Add `shadow-default`
+- ➕ Add `transition-shadow duration-200`
+- ➕ Change `border-input` → `border-muted`
+- ✅ Keep: `bg-interactive`
+
+**Updated className**:
+```
+"flex h-10 w-full items-center justify-between rounded-md border border-muted bg-interactive px-3 py-2 text-sm shadow-default transition-shadow duration-200 placeholder:text-muted-foreground focus:outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 hover:shadow-hover-primary [&>span]:line-clamp-1"
+```
+
+**SelectContent Changes** (line 78):
+- ➕ Change `bg-popover text-popover-foreground` → `bg-interactive text-interactive-foreground`
+
+### 13.3 Custom Input Components Enhancement
+
+All custom inputs maintain their validation shadow system and add status icon support.
+
+#### 13.3.1 Short Text Input (FormInput)
+**File**: `components/ui/custom-ui-elements/inputs/short-text-input.tsx`
+
+**Keep**:
+- ✅ `state` prop (line 37)
+- ✅ `getShadowClass()` function (lines 72-83, 202-213)
+- ✅ Validation shadows (success/error/warning)
+
+**Add**:
+- ➕ `statusIcon?: React.ReactNode` prop to interfaces (lines 29, 176)
+- ➕ Icon positioning: RIGHT side inside input
+- ➕ Icon wrapper: `absolute right-2 top-1/2 -translate-y-1/2`
+- ➕ Padding adjustment: `pr-10` when icon present
+
+**Implementation Pattern**:
+```typescript
+interface FormInputProps {
+  // ... existing props
+  statusIcon?: React.ReactNode
+}
+
+// In render:
+<div className="relative">
+  <Input
+    className={cn(
+      getShadowClass(),
+      'transition-shadow duration-200',
+      statusIcon && 'pr-10',
+      className
+    )}
+    {...props}
+  />
+  {statusIcon && (
+    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+      {statusIcon}
+    </div>
+  )}
+</div>
+```
+
+#### 13.3.2 Long Text Input (FormTextarea)
+**File**: `components/ui/custom-ui-elements/inputs/long-text-input.tsx`
+
+**Keep**:
+- ✅ `state` prop (line 39)
+- ✅ `getShadowClass()` function (lines 79-90, 215-226)
+- ✅ Validation shadows
+
+**Add**:
+- ➕ `statusIcon?: React.ReactNode` prop to interfaces (lines 28, 185)
+- ➕ Icon positioning: RIGHT BOTTOM corner
+- ➕ Icon wrapper: `absolute right-2 bottom-2`
+- ⚠️ Note: "Add variable" button at `right-2 top-2`, icon at `right-2 bottom-2`
+
+#### 13.3.3 Number Input
+**File**: `components/ui/custom-ui-elements/inputs/number-input.tsx`
+
+**Keep**:
+- ✅ `state` prop (line 25)
+- ✅ `getShadowClass()` functions (lines 72-98)
+- ✅ Validation shadows
+
+**Add**:
+- ➕ `statusIcon?: React.ReactNode` prop (line 11)
+- ➕ Icon positioning: RIGHT side of component
+- ➕ Replace: `shadow-default hover:shadow-hover-primary` on input and buttons
+
+#### 13.3.4 Radio Group
+**File**: `components/ui/custom-ui-elements/inputs/radio-group.tsx`
+
+**Keep**:
+- ✅ `state` prop (line 23)
+- ✅ `getShadowClass()` function (lines 45-57)
+- ✅ Validation shadows
+
+**Add**:
+- ➕ `statusIcon?: React.ReactNode` prop (line 14)
+- ➕ Icon position: Next to label in FormFieldWrapper
+- ➕ Pass icon to FormFieldWrapper component
+
+#### 13.3.5 Select Input (FormSelect)
+**File**: `components/ui/custom-ui-elements/inputs/select.tsx`
+
+**Keep**:
+- ✅ `state` prop (lines 24, 105)
+- ✅ `getShadowClass()` function (lines 43-55, 121-133)
+- ✅ Validation shadows
+
+**Add**:
+- ➕ `statusIcon?: React.ReactNode` prop to interfaces (lines 13, 96)
+- ➕ Icon positioning: RIGHT side inside SelectTrigger
+- ➕ Icon wrapper: `absolute right-8 top-1/2 -translate-y-1/2` (avoids chevron)
+- ➕ Padding: `pr-16` on SelectTrigger when icon present
+
+**SelectContent Changes**:
+- ➕ Change to: `bg-interactive text-interactive-foreground`
+
+### 13.4 FormFieldWrapper Enhancement
+
+**File**: `components/forms/blocks/form-validation.tsx`
+
+**Add**:
+- ➕ `statusIcon?: React.ReactNode` prop
+- ➕ Display icon next to label
+
+**Implementation**:
+```typescript
+{label && (
+  <label className="...">
+    {label}
+    {required && <span>*</span>}
+    {statusIcon && <span className="ml-2 inline-flex">{statusIcon}</span>}
+  </label>
+)}
+```
+
+### 13.5 Selector Components Standardization
+
+#### 13.5.1 BaseSelector Component
+**File**: `components/selectors/base-selector.tsx`
+
+**Remove**:
+- ❌ `displayColorClass` prop
+- ❌ Semantic text colors in trigger (line 246)
+
+**Keep**:
+- ✅ Selected items with `bg-success/10` and `text-success`
+- ✅ Recommended items with `bg-recommendation/10` and recommendation color
+- ✅ Icons in dropdown items (MapPin, Lightbulb, etc.)
+
+**Add**:
+- ➕ `state?: 'default' | 'success' | 'error' | 'warning'` prop
+- ➕ `getShadowClass()` function (same pattern as inputs)
+- ➕ `statusIcon?: React.ReactNode` prop
+- ➕ Pass shadow class and icon to SelectButton
+- ➕ Text: `text-foreground` when selected, `text-muted-foreground` for placeholder
+
+**CommandContent**:
+- ✅ Ensure `bg-interactive`
+
+#### 13.5.2 SelectButton Component
+**File**: `components/ui/custom-ui-elements/buttons/select-button.tsx`
+
+**Remove**:
+- ❌ `borderColorClass` prop (line 19)
+- ❌ `chevronColorClass` prop (line 20)
+- ❌ Semantic border logic (line 47)
+- ❌ Chevron color logic (line 58)
+
+**Add**:
+- ➕ `statusIcon?: React.ReactNode` prop
+- ➕ `shadowClass?: string` prop
+- ➕ Icon positioning: RIGHT side, before chevron
+- ➕ Apply shadow class to SecondaryButton
+- ✅ Keep: `border-primary` when `isOpen`
+
+**Layout Structure**:
+```typescript
+<SecondaryButton className={shadowClass}>
+  <span className="truncate">{children}</span>
+  {statusIcon && <span className="ml-2 flex-shrink-0">{statusIcon}</span>}
+  <ChevronsUpDown className="ml-2 h-4 w-4 ..." />
+</SecondaryButton>
+```
+
+#### 13.5.3 PathsExpandSelector Component
+**File**: `components/selectors/paths-expand-selector.tsx`
+
+**Remove**:
+- ❌ `getDisplayColorClass()` function (lines 34-49)
+- ❌ `displayColorClass` prop to BaseSelector (line 65)
+
+**Add**:
+- ➕ `getStatusIcon()` function:
+```typescript
+const getStatusIcon = (value?: string) => {
+  switch (value) {
+    case 'show-mapped':
+      return <MapPin className="h-4 w-4 text-success" />
+    case 'show-issues':
+      return <AlertTriangle className="h-4 w-4 text-warning" />
+    case 'show-recommended':
+      return <Lightbulb className="h-4 w-4 text-recommendation" />
+    case 'show-structure':
+      return <Layers className="h-4 w-4 text-primary" />
+    case 'show-all':
+      return <Grid className="h-4 w-4 text-muted-foreground" />
+    default:
+      return null
+  }
+}
+```
+- ➕ Pass `statusIcon={getStatusIcon(value)}` to BaseSelector
+- ➕ Optionally pass `state` prop for validation shadows
+
+#### 13.5.4 JsonSelector Component
+**File**: `components/selectors/json-selector.tsx`
+
+**Changes**:
+- ✅ No status icons needed (files don't have semantic status)
+- ➕ Add shadow-default via base-selector
+- ➕ Ensure dropdowns use `bg-interactive`
+
+#### 13.5.5 Other Selectors
+**Files**: source-selector.tsx, datapoint-selector.tsx, workflow-phase-selector.tsx, etc.
+
+**Changes**:
+- ➕ Add status icons where semantic meaning exists
+- ➕ Each can define custom icon set with custom colors
+- Most won't need status icons (pure data selection)
+
+### 13.6 Status Icon Patterns
+
+#### 13.6.1 Validation Icons (for Inputs)
+```typescript
+import { CheckCircle, XCircle, AlertCircle } from "lucide-react"
+
+const validationIcons = {
+  default: null,
+  success: <CheckCircle className="h-4 w-4 text-success" />,
+  error: <XCircle className="h-4 w-4 text-destructive" />,
+  warning: <AlertCircle className="h-4 w-4 text-warning" />
+}
+```
+
+#### 13.6.2 Semantic Icons (for Selectors)
+```typescript
+import { MapPin, Lightbulb, AlertTriangle, Layers, Grid } from "lucide-react"
+
+// Example for paths-expand-selector
+const statusIcons = {
+  'show-mapped': <MapPin className="h-4 w-4 text-success" />,
+  'show-issues': <AlertTriangle className="h-4 w-4 text-warning" />,
+  'show-recommended': <Lightbulb className="h-4 w-4 text-recommendation" />,
+  'show-structure': <Layers className="h-4 w-4 text-primary" />,
+  'show-all': <Grid className="h-4 w-4 text-muted-foreground" />
+}
+```
+
+### 13.7 Icon Positioning Summary
+
+| Component | Icon Position | Wrapper Classes | Padding Adjustment |
+|-----------|---------------|-----------------|-------------------|
+| **FormInput** | Right inside | `absolute right-2 top-1/2 -translate-y-1/2` | `pr-10` |
+| **FormTextarea** | Right bottom corner | `absolute right-2 bottom-2` | Optional padding |
+| **NumberInput** | Right side | After number controls | As needed |
+| **RadioGroup** | Next to label | `ml-2 inline-flex` in FormFieldWrapper | None |
+| **FormSelect** | Right inside | `absolute right-8 top-1/2 -translate-y-1/2` | `pr-16` |
+| **BaseSelector** | Before chevron | `ml-2 flex-shrink-0` between text/chevron | None |
+
+### 13.8 Complete Status System Matrix
+
+| Component | Colored Shadows | Status Icons | Icon Location | Icon Purpose |
+|-----------|----------------|--------------|---------------|--------------|
+| **Input** | ✅ Validation | ✅ Optional | Right inside | Validation state |
+| **Textarea** | ✅ Validation | ✅ Optional | Right-bottom | Validation state |
+| **Number** | ✅ Validation | ✅ Optional | Right side | Validation state |
+| **Radio** | ✅ Validation | ✅ Optional | Next to label | Validation state |
+| **Select (input)** | ✅ Validation | ✅ Optional | Right inside | Validation state |
+| **Base Selector** | ✅ Validation | ✅ Optional | Before chevron | Semantic meaning |
+| **Paths Selector** | ✅ Validation | ✅ Required | Before chevron | Show/filter type |
+| **JSON Selector** | ✅ Validation | ❌ None | - | File selection |
+| **Other Selectors** | ✅ Validation | ⚠️ Contextual | Before chevron | Data-specific |
+
+### 13.9 Implementation Steps
+
+#### Step 1: Update Base UI Components (3 files)
+1. Add `shadow-default transition-shadow duration-200` to input.tsx
+2. Add `shadow-default transition-shadow duration-200` to textarea.tsx
+3. Add `shadow-default transition-shadow duration-200` to select.tsx
+4. Change SelectContent to `bg-interactive text-interactive-foreground`
+5. Test all base components
+
+#### Step 2: Enhance Custom Input Components (5 files)
+1. Add `statusIcon` prop to all input interfaces
+2. Implement icon positioning for each component type
+3. Add padding adjustments where needed
+4. Keep existing validation shadows and state props
+5. Test each input type with and without icons
+
+#### Step 3: Update FormFieldWrapper (1 file)
+1. Add `statusIcon` prop to interface
+2. Implement icon display next to label
+3. Test with radio group component
+
+#### Step 4: Standardize Selector Components (7+ files)
+1. Update BaseSelector with shadow system and icon support
+2. Update SelectButton to accept shadow and icon props
+3. Remove semantic color props from all selectors
+4. Add status icon functions to paths-expand-selector
+5. Ensure all selectors use bg-interactive for dropdowns
+6. Test selector visual consistency
+
+#### Step 5: Testing and Validation
+1. Test shadow system across all components
+2. Test icon positioning in all locations
+3. Test validation states with colored shadows
+4. Test semantic icons in selectors
+5. Test hover states and transitions
+6. Test disabled states
+7. Verify visual consistency across component types
+
+### 13.10 New Imports Required
+
+**Lucide React Icons**:
+```typescript
+import { 
+  CheckCircle, XCircle, AlertCircle,  // Validation icons
+  MapPin, Lightbulb, AlertTriangle,    // Semantic icons
+  Layers, Grid                          // Additional UI icons
+} from "lucide-react"
+```
+
+### 13.11 Files to Modify
+
+**Base UI Components (3 files)**:
+1. `components/ui/input.tsx`
+2. `components/ui/textarea.tsx`
+3. `components/ui/select.tsx`
+
+**Custom Input Components (5 files)**:
+4. `components/ui/custom-ui-elements/inputs/short-text-input.tsx`
+5. `components/ui/custom-ui-elements/inputs/long-text-input.tsx`
+6. `components/ui/custom-ui-elements/inputs/number-input.tsx`
+7. `components/ui/custom-ui-elements/inputs/radio-group.tsx`
+8. `components/ui/custom-ui-elements/inputs/select.tsx`
+
+**Form Components (1 file)**:
+9. `components/forms/blocks/form-validation.tsx`
+
+**Selector Components (7+ files)**:
+10. `components/selectors/base-selector.tsx`
+11. `components/ui/custom-ui-elements/buttons/select-button.tsx`
+12. `components/selectors/paths-expand-selector.tsx`
+13. `components/selectors/json-selector.tsx`
+14. `components/selectors/source-selector.tsx`
+15. `components/selectors/datapoint-selector.tsx`
+16. `components/selectors/workflow-phase-selector.tsx`
+17. Other selector files as needed
+
+**Total Files**: ~16 files
+
+### 13.12 Success Criteria
+
+**Visual Consistency**:
+- All inputs and selectors use consistent shadow system
+- Status indication through both shadows and icons
+- Unified border and background colors
+- Consistent text color states
+
+**Functional Requirements**:
+- Validation shadows work correctly
+- Status icons display appropriately
+- Icons positioned correctly on right side
+- Hover states provide proper feedback
+- Disabled states work correctly
+
+**Code Quality**:
+- Clean, maintainable code patterns
+- Consistent prop interfaces
+- Proper TypeScript typing
+- Reusable icon patterns
+- Well-documented components
+
+**User Experience**:
+- Clear visual feedback for all states
+- Intuitive status indication
+- Smooth transitions and animations
+- Consistent interaction patterns
+- Accessible for all users
+
+This phase completes the standardization of inputs and selectors, creating a unified visual language with consistent shadow systems, status indication patterns, and interaction behaviors across all form components.
+
+## Phase 14: Complete Bidirectional File Management Integration
+
+### Overview
+Integrate SourceBodyUpload's internal file management with ManageJsonsDialog and JsonSelector to create a unified file management system where files flow bidirectionally between the initial upload interface and the management dialog, all orchestrated by mapper components.
+
+### Executive Summary
+
+**Goal**: Connect SourceBodyUpload's internal file management with ManageJsonsDialog so all uploaded files (whether uploaded through SourceBodyUpload's initial upload interface or through ManageJsonsDialog later) appear in a unified file list accessible from JsonSelector dropdown within JsonExplorer.
+
+**Solution**: Lift file state from SourceBodyUpload to mapper level, making SourceBodyUpload a controlled component that accepts files as props and uses callbacks for modifications, while mappers maintain central file state authority.
+
+**Key Features**:
+1. **State Elevation**: Files and activeFileId managed at mapper level, not in SourceBodyUpload
+2. **Controlled SourceBodyUpload**: Accepts files/activeFileId props, uses parent callbacks for changes
+3. **Mapper Orchestration**: Mappers own file state and coordinate all file operations
+4. **Unified File List**: All files visible in JsonSelector regardless of upload source
+5. **Bidirectional Flow**: Files added via SourceBodyUpload or ManageJsonsDialog appear in unified list
+6. **Automatic Rendering**: Automatic transition from upload to explorer when JSON validated
+
+**Current Behavior**:
+- SourceBodyUpload maintains internal jsonFiles state
+- Files uploaded through SourceBodyUpload automatically trigger mapper rendering
+- No "Continue" button - seamless automatic transition to JsonExplorer
+- Files remain trapped inside SourceBodyUpload, not accessible to JsonExplorer/ManageJsonsDialog
+
+**Target Behavior**:
+- Mappers maintain jsonFiles and activeFileId state
+- SourceBodyUpload becomes controlled component receiving files as props
+- Automatic rendering preserved - still transitions seamlessly to JsonExplorer
+- Files flow to JsonExplorer and appear in JsonSelector dropdown
+- ManageJsonsDialog shows all uploaded files
+- Adding files via dialog adds to mapper's files state
+- All components stay synchronized through mapper state
+
+**User Experience**:
+User uploads file → File added to mapper state → Automatic transition to JsonExplorer → JsonSelector shows file in dropdown → User clicks dropdown → ManageJsonsDialog displays file → User uploads another file via dialog → Both files appear everywhere → User can switch between files → All components synchronized
+
+**Technical Approach**:
+- Standardize JsonFile interface across all components
+- Convert SourceBodyUpload to controlled component pattern
+- Add file management state and callbacks to all three mappers
+- Update forms to pass file props from mappers to JsonExplorer
+- Maintain automatic rendering behavior while adding file management
+
+### 14.1 Unified JsonFile Interface
+
+**Current State**: Three different JsonFile interfaces exist across components with inconsistent property names.
+
+**SourceBodyUpload's JsonFile** (line 13):
+```typescript
+interface JsonFile {
+  id: string
+  name: string
+  content: any
+  lastModified: Date
+  propertiesCount: number
+}
+```
+
+**ManageJsonsDialog's JsonFile** (line 13):
+```typescript
+interface JsonFile {
+  id: string
+  name: string
+  size: number
+  lastModified: Date
+  propertiesCount: number
+  data: any
+}
+```
+
+**JsonExplorer's JsonFile** (line 33):
+```typescript
+interface JsonFile {
+  id: string
+  name: string
+  file: File
+  data: any
+  size: number
+  lastModified: Date
+}
+```
+
+**Standardized Interface**:
+```typescript
+interface JsonFile {
+  id: string                    // Unique identifier
+  name: string                  // Filename
+  content: any                  // Parsed JSON data (standardize on 'content')
+  size: number                  // File size in bytes
+  lastModified: Date            // Last modified timestamp
+  propertiesCount: number       // Count of root properties
+}
+```
+
+**Required Updates**:
+- **ManageJsonsDialog**: Change `data` property to `content` (line 19)
+- **JsonSelector**: Change `data` property to `content` (line 13)
+- **JsonExplorer**: Change `data` property to `content` OR map in forms when passing
+- **SourceBodyUpload**: Already uses `content` ✓
+
+### 14.2 SourceBodyUpload Component Refactoring
+
+**File**: `components/json/interface/source-body-upload.tsx` (REFACTOR)
+
+**Current State** (lines 52-57):
+- Internal state: `jsonFiles` and `activeFileId` managed internally
+- Automatic notification via `onJsonDataChange` callback
+- No external control over file state
+
+**Target State**: Controlled component accepting files from parent
+
+**Props Interface Update**:
+```typescript
+interface SourceBodyUploadProps {
+  // NEW: Controlled state props
+  files?: JsonFile[]
+  activeFileId?: string | null
+  onFilesChange?: (files: JsonFile[]) => void
+  onActiveFileIdChange?: (id: string | null) => void
+  
+  // Existing props
+  label?: string
+  description?: string
+  maxFiles?: number
+  maxSize?: number
+  className?: string
+  fixedHeight?: string
+  showRequestTab?: boolean
+  showUploadTab?: boolean
+  showTextTab?: boolean
+  onJsonDataChange?: (data: {
+    files: JsonFile[]
+    activeFile: JsonFile | null
+    textData: any | null
+    combinedData: any | null
+  }) => void
+}
+```
+
+**State Conversion** (lines 52-57):
+```typescript
+// BEFORE (internal state):
+const [jsonFiles, setJsonFiles] = useState<JsonFile[]>([])
+const [activeFileId, setActiveFileId] = useState<string | null>(null)
+
+// AFTER (use props with fallback):
+const jsonFiles = files || []
+const activeFileId = activeFileId || null
+
+// Keep internal state for text input and request
+const [textInput, setTextInput] = useState<string>("")
+const [isRequesting, setIsRequesting] = useState<boolean>(false)
+const [requestError, setRequestError] = useState<string>("")
+const [activeTab, setActiveTab] = useState<string>("upload")
+```
+
+**handleFileUpload Update** (lines 89-126):
+```typescript
+const handleFileUpload = useCallback((uploadedFiles: File[]) => {
+  const newFiles: JsonFile[] = []
+  
+  uploadedFiles.forEach((file) => {
+    const reader = new FileReader()
+    
+    reader.onload = (e) => {
+      try {
+        const content = JSON.parse(e.target?.result as string)
+        const jsonFile: JsonFile = {
+          id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: file.name,
+          content,
+          size: file.size,  // ADD size property
+          lastModified: new Date(file.lastModified),
+          propertiesCount: Object.keys(content).length
+        }
+        
+        newFiles.push(jsonFile)
+        
+        if (newFiles.length === uploadedFiles.length) {
+          // Call parent callback instead of setState
+          const updated = [...jsonFiles, ...newFiles]
+          onFilesChange?.(updated)
+          
+          // Auto-select first file if none selected
+          if (!activeFileId && updated.length > 0) {
+            onActiveFileIdChange?.(updated[0].id)
+          }
+        }
+      } catch (error) {
+        console.error("Failed to parse JSON file:", file.name, error)
+      }
+    }
+    
+    reader.readAsText(file)
+  })
+}, [jsonFiles, activeFileId, onFilesChange, onActiveFileIdChange])
+```
+
+**handleGetByRequest Update** (lines 130-171):
+```typescript
+const handleGetByRequest = useCallback(async () => {
+  setIsRequesting(true)
+  setRequestError("")
+  
+  try {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const mockResponse = { /* ... */ }
+    
+    const newFile: JsonFile = {
+      id: `request-${Date.now()}`,
+      name: "API Response",
+      content: mockResponse,
+      size: JSON.stringify(mockResponse).length,  // Calculate size
+      lastModified: new Date(),
+      propertiesCount: Object.keys(mockResponse).length
+    }
+    
+    // Call parent callback
+    const updated = [...jsonFiles, newFile]
+    onFilesChange?.(updated)
+    onActiveFileIdChange?.(newFile.id)
+    
+  } catch (error) {
+    setRequestError("Failed to fetch data from request")
+  } finally {
+    setIsRequesting(false)
+  }
+}, [jsonFiles, onFilesChange, onActiveFileIdChange])
+```
+
+**handleSaveAsJsonFile Update** (lines 185-214):
+```typescript
+const handleSaveAsJsonFile = useCallback(() => {
+  if (!hasValidTextData) return
+  
+  try {
+    const jsonData = JSON.parse(textInput)
+    const jsonString = JSON.stringify(jsonData)
+    
+    const newFile: JsonFile = {
+      id: `text-${Date.now()}`,
+      name: `pasted-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
+      content: jsonData,
+      size: jsonString.length,  // Calculate size
+      lastModified: new Date(),
+      propertiesCount: Object.keys(jsonData).length
+    }
+    
+    // Call parent callback
+    const updated = [...jsonFiles, newFile]
+    onFilesChange?.(updated)
+    
+    if (!activeFileId) {
+      onActiveFileIdChange?.(newFile.id)
+    }
+    
+    setTextInput("")
+  } catch (error) {
+    console.error('Failed to save JSON file:', error)
+  }
+}, [textInput, hasValidTextData, jsonFiles, activeFileId, onFilesChange, onActiveFileIdChange])
+```
+
+### 14.3 Mapper Component Enhancements
+
+**Files**: 
+- `components/json/response/json-result-mapper.tsx`
+- `components/json/request/json-request-mapper.tsx`
+- `components/json/response/json-response-mapper.tsx`
+
+**Add File State** (after line 96 in all mappers):
+```typescript
+// Add file management state
+const [jsonFiles, setJsonFiles] = useState<JsonFile[]>([])
+const [activeFileId, setActiveFileId] = useState<string | null>(null)
+```
+
+**Update handleUploadDataChange** (lines 99-108 in all mappers):
+```typescript
+const handleUploadDataChange = useCallback((uploadData: {
+  files: JsonFile[]
+  activeFile: JsonFile | null
+  textData: any | null
+  combinedData: any | null
+}) => {
+  // Store files in mapper state
+  setJsonFiles(uploadData.files)
+  
+  // Store active file ID
+  if (uploadData.activeFile) {
+    setActiveFileId(uploadData.activeFile.id)
+  }
+  
+  // Notify parent form of data change
+  if (onDataChange && uploadData.combinedData) {
+    onDataChange(uploadData.combinedData)
+  }
+}, [onDataChange])
+```
+
+**Add File Management Callbacks** (after handleUploadDataChange):
+```typescript
+// Handle files change from SourceBodyUpload
+const handleFilesChange = useCallback((files: JsonFile[]) => {
+  setJsonFiles(files)
+}, [])
+
+// Handle active file change from SourceBodyUpload or JsonExplorer
+const handleActiveFileIdChange = useCallback((id: string | null) => {
+  setActiveFileId(id)
+  
+  // Update data when active file changes
+  const file = jsonFiles.find(f => f.id === id)
+  if (file && onDataChange) {
+    onDataChange(file.content)
+  }
+}, [jsonFiles, onDataChange])
+
+// Handle file removal from JsonExplorer/ManageJsonsDialog
+const handleFileRemove = useCallback((fileId: string) => {
+  setJsonFiles(prev => {
+    const updated = prev.filter(f => f.id !== fileId)
+    
+    // If removed file was active, select next file
+    if (activeFileId === fileId) {
+      const nextFile = updated.length > 0 ? updated[0] : null
+      setActiveFileId(nextFile?.id || null)
+      
+      // Update data with next file
+      if (nextFile && onDataChange) {
+        onDataChange(nextFile.content)
+      } else if (onDataChange) {
+        onDataChange(null)
+      }
+    }
+    
+    return updated
+  })
+}, [activeFileId, onDataChange])
+
+// Handle file upload from ManageJsonsDialog
+const handleFileUpload = useCallback((file: File) => {
+  const reader = new FileReader()
+  
+  reader.onload = (e) => {
+    try {
+      const content = JSON.parse(e.target?.result as string)
+      const newFile: JsonFile = {
+        id: `dialog-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: file.name,
+        content,
+        size: file.size,
+        lastModified: new Date(file.lastModified),
+        propertiesCount: Object.keys(content).length
+      }
+      
+      setJsonFiles(prev => {
+        const updated = [...prev, newFile]
+        
+        // Auto-select if no active file
+        if (!activeFileId) {
+          setActiveFileId(newFile.id)
+          if (onDataChange) {
+            onDataChange(newFile.content)
+          }
+        }
+        
+        return updated
+      })
+    } catch (error) {
+      console.error("Failed to parse JSON file:", file.name, error)
+    }
+  }
+  
+  reader.readAsText(file)
+}, [activeFileId, onDataChange])
+```
+
+**Update SourceBodyUpload Rendering** (lines 234-242 for JsonResultMapper, 179-184 for Request/Response):
+```typescript
+if (!data && showUpload) {
+  return (
+    <SourceBodyUpload
+      files={jsonFiles}
+      activeFileId={activeFileId}
+      onFilesChange={handleFilesChange}
+      onActiveFileIdChange={handleActiveFileIdChange}
+      onJsonDataChange={handleUploadDataChange}
+    />
+  )
+}
+```
+
+**Update onProcessedData Call** (lines 256-279 for JsonResultMapper, 199-206 for Request/Response):
+```typescript
+if (dataReady && onProcessedData && statistics) {
+  return onProcessedData({
+    basePaths,
+    fullPaths,
+    statistics,
+    dataReady: true,
+    // NEW: Add file management props
+    files: jsonFiles,
+    activeFileId,
+    onFileSelect: handleActiveFileIdChange,
+    onFileRemove: handleFileRemove,
+    onFileUpload: handleFileUpload
+  })
+}
+```
+
+**Update Props Interface**:
+```typescript
+interface JsonResultMapperProps {
+  data?: any
+  objectsAndDatapointsMappings?: Mappings
+  showUpload?: boolean
+  uploadLabel?: string
+  onDataChange?: (data: any) => void
+  onProcessedData?: (processedData: {
+    basePaths: Record<string, BasePathData>
+    fullPaths: Array<FullPathData>
+    statistics: MappingStatistics
+    dataReady: boolean
+    // NEW props for file management
+    files: JsonFile[]
+    activeFileId: string | null
+    onFileSelect: (fileId: string) => void
+    onFileRemove: (fileId: string) => void
+    onFileUpload: (file: File) => void
+  }) => React.ReactNode
+}
+```
+
+### 14.4 Form Component Updates
+
+**Files**:
+- `components/forms/run-request-form.tsx`
+- `components/forms/status-check-form.tsx`
+- `components/forms/delivery-form.tsx`
+
+**Update onProcessedData Callback** (lines 84-100 in RunRequestForm, similar in others):
+```typescript
+onProcessedData={(processedData) => (
+  <JsonExplorer
+    data={{}}
+    basePaths={processedData.basePaths}
+    fullPaths={processedData.fullPaths}
+    statistics={processedData.statistics as any}
+    mapperType="request"
+    // NEW: Pass file management props
+    files={processedData.files?.map(f => ({
+      ...f,
+      data: f.content,  // JsonExplorer expects 'data' property
+      file: undefined as any  // Optional File object not available
+    }))}
+    currentFile={processedData.activeFileId}
+    onFileSelect={processedData.onFileSelect}
+    onFileRemove={processedData.onFileRemove}
+    onFileUpload={processedData.onFileUpload}
+    options={{
+      showMapping: true,
+      showStatus: true,
+      showAccordion: true,
+      defaultExpanded: false,
+      showMetadata: true,
+      compactMode: false
+    }}
+  />
+)}
+```
+
+### 14.5 JsonExplorer Integration
+
+**File**: `components/json/interface/json-explorer.tsx`
+
+**Current State**: Already accepts all necessary props (lines 50-56, 66-70):
+- `files?: JsonFile[]`
+- `currentFile?: string | null`
+- `onFileSelect?: (fileId: string) => void`
+- `onFileRemove?: (fileId: string) => void`
+- `onFileUpload?: (file: File) => void`
+
+**Integration**: Passes props to JsonSelector (lines 410-426), which passes to ManageJsonsDialog (lines 83-91).
+
+**Only Fix Needed**: JsonExplorer's JsonFile interface expects `data` property, but we standardized on `content`.
+
+**Options**:
+- **Option A**: Update JsonExplorer interface to use `content`
+- **Option B**: Map in forms when passing (shown in 14.4 above)
+
+### 14.6 ManageJsonsDialog Updates
+
+**File**: `components/dialogs/manage-jsons-dialog.tsx`
+
+**Interface Update** (lines 13-20):
+```typescript
+interface JsonFile {
+  id: string
+  name: string
+  content: any  // Changed from 'data'
+  size: number
+  lastModified: Date
+  propertiesCount: number
+}
+```
+
+**No other changes needed** - component already handles everything correctly.
+
+### 14.7 Complete Data Flow Diagrams
+
+#### Flow 1: Initial Upload via SourceBodyUpload
+
+```
+User uploads file
+    ↓
+SourceBodyUpload.handleFileUpload
+    ↓
+onFilesChange(updated files) → Mapper.handleFilesChange
+    ↓
+Mapper.setJsonFiles(files)
+    ↓
+onActiveFileIdChange(fileId) → Mapper.handleActiveFileIdChange
+    ↓
+Mapper.setActiveFileId(id)
+Mapper.onDataChange(file.content) → Form updates data state
+    ↓
+onJsonDataChange(uploadData) → Mapper.handleUploadDataChange
+    ↓
+Mapper receives combinedData
+Form's data state updated → triggers re-render
+    ↓
+Mapper processes data → dataReady = true
+    ↓
+Mapper calls onProcessedData with files, activeFileId, callbacks
+    ↓
+Form renders JsonExplorer with file management props
+    ↓
+JsonExplorer shows JsonSelector with files in dropdown
+```
+
+#### Flow 2: Upload via ManageJsonsDialog
+
+```
+User clicks JsonSelector dropdown
+    ↓
+JsonSelector opens (variant="dialog")
+    ↓
+ManageJsonsDialog renders showing existing files
+    ↓
+User uploads file via FormDragDrop in dialog
+    ↓
+Dialog.handleFilesChange → Dialog.handleFileUpload
+    ↓
+onFileUpload(file) → JsonSelector prop
+    ↓
+JsonExplorer prop → onFileUpload
+    ↓
+Mapper.handleFileUpload
+    ↓
+FileReader parses file
+    ↓
+Mapper.setJsonFiles([...prev, newFile])
+If no active file: setActiveFileId(newFile.id)
+If no active file: onDataChange(newFile.content)
+    ↓
+Form's data state updated → triggers re-render
+    ↓
+Mapper processes new file → calls onProcessedData
+    ↓
+JsonExplorer re-renders with updated files
+    ↓
+ManageJsonsDialog shows new file in list
+```
+
+#### Flow 3: File Selection from Dialog
+
+```
+User clicks file in ManageJsonsDialog
+    ↓
+Dialog calls onFileSelect(fileId)
+    ↓
+JsonSelector prop → JsonExplorer prop
+    ↓
+Mapper.handleActiveFileIdChange(fileId)
+    ↓
+Mapper.setActiveFileId(fileId)
+Mapper.onDataChange(file.content)
+    ↓
+Form's data state updated → triggers re-render
+    ↓
+Mapper processes with new active file
+    ↓
+JsonExplorer re-renders showing new active file
+    ↓
+ManageJsonsDialog highlights new active file
+JsonSelector dropdown shows new selection
+```
+
+#### Flow 4: File Removal from Dialog
+
+```
+User clicks delete button in ManageJsonsDialog
+    ↓
+ConfirmDialog appears
+    ↓
+User confirms → onFileRemove(fileId)
+    ↓
+JsonSelector prop → JsonExplorer prop
+    ↓
+Mapper.handleFileRemove(fileId)
+    ↓
+Mapper.setJsonFiles(filtered)
+If removed was active:
+    - setActiveFileId(nextFile?.id || null)
+    - onDataChange(nextFile?.content || null)
+    ↓
+Form's data state updated
+    ↓
+Mapper re-processes
+    ↓
+JsonExplorer re-renders without removed file
+    ↓
+ManageJsonsDialog shows updated file list
+If no files remain: shows empty state
+```
+
+### 14.8 User Experience Scenarios
+
+#### Scenario 1: Initial Upload
+1. Form renders with no data
+2. Mapper shows SourceBodyUpload (controlled by files state)
+3. User drags JSON file to upload area
+4. File parses, added to Mapper.jsonFiles state
+5. Auto-selected as activeFileId
+6. Mapper's data prop updates with file.content
+7. **Automatic transition** → JsonExplorer renders
+8. JsonSelector dropdown shows uploaded file
+9. User can click dropdown → sees ManageJsonsDialog with file listed
+
+#### Scenario 2: Multiple File Upload
+1. User pastes JSON in "Paste as Text" tab
+2. Clicks "Save as JSON file"
+3. File added to Mapper.jsonFiles
+4. JsonExplorer already visible, JsonSelector updates
+5. User clicks "Add JSON" in JsonSelector
+6. ManageJsonsDialog opens showing both files
+7. User uploads third file via dialog
+8. Dialog closes, all three files in dropdown
+9. Active file remains selected
+
+#### Scenario 3: Switching Files
+1. User has 3 files loaded
+2. Clicks JsonSelector dropdown
+3. Selects different file
+4. Mapper.handleActiveFileIdChange updates activeFileId
+5. Mapper calls onDataChange with new file's content
+6. Form updates data state
+7. Mapper re-processes new file
+8. JsonExplorer re-renders with new file's JSON structure
+9. ProgressBar shows new file's statistics
+10. ManageJsonsDialog (if open) highlights new selection
+
+#### Scenario 4: File Management
+1. User opens ManageJsonsDialog
+2. Sees all uploaded files with metadata
+3. Clicks file to select → becomes active
+4. Clicks delete on another file → confirm dialog
+5. Confirms deletion → file removed from list
+6. Dropdown updates to show remaining files
+7. Active file unchanged, continues displaying
+8. Can upload more files, repeat cycle
+
+### 14.9 Implementation Steps
+
+#### Step 1: Standardize JsonFile Interface
+1. Update ManageJsonsDialog to use `content` instead of `data`
+2. Update JsonSelector to use `content` instead of `data`
+3. Update JsonExplorer to use `content` OR add mapping in forms
+4. Verify SourceBodyUpload already uses `content`
+5. Test interface consistency
+
+#### Step 2: Refactor SourceBodyUpload
+1. Add `files`, `activeFileId`, `onFilesChange`, `onActiveFileIdChange` props
+2. Remove internal `useState` for files and activeFileId
+3. Use props with fallback instead of internal state
+4. Update `handleFileUpload` to call parent callbacks
+5. Update `handleGetByRequest` to call parent callbacks
+6. Update `handleSaveAsJsonFile` to call parent callbacks
+7. Add `size` property when creating JsonFile objects
+8. Test controlled behavior
+
+#### Step 3: Enhance All Three Mappers
+1. Add `jsonFiles` and `activeFileId` state to each mapper
+2. Update `handleUploadDataChange` to capture files from uploadData
+3. Add `handleFilesChange` callback
+4. Add `handleActiveFileIdChange` callback
+5. Add `handleFileRemove` callback
+6. Add `handleFileUpload` callback for dialog uploads
+7. Pass controlled props to SourceBodyUpload
+8. Pass file management props to onProcessedData callback
+9. Update mapper interfaces to include file props
+10. Test each mapper independently
+
+#### Step 4: Update Form Components
+1. Update `onProcessedData` callback in RunRequestForm
+2. Map file props from mappers to JsonExplorer
+3. Convert `content` to `data` if needed for JsonExplorer
+4. Repeat for StatusCheckForm
+5. Repeat for DeliveryForm
+6. Test forms with file management
+
+#### Step 5: Testing and Validation
+1. Test initial file upload through SourceBodyUpload
+2. Test files appearing in JsonSelector dropdown
+3. Test opening ManageJsonsDialog and seeing files
+4. Test uploading files through ManageJsonsDialog
+5. Test file selection from dropdown
+6. Test file removal from dialog
+7. Test switching between files
+8. Test automatic rendering still works
+9. Test all three form types
+10. Verify bidirectional file flow
+
+### 14.10 Files to Modify
+
+**Component Files (9 files)**:
+1. `components/json/interface/source-body-upload.tsx` - Convert to controlled component
+2. `components/json/response/json-result-mapper.tsx` - Add file management
+3. `components/json/request/json-request-mapper.tsx` - Add file management
+4. `components/json/response/json-response-mapper.tsx` - Add file management
+5. `components/forms/run-request-form.tsx` - Pass file props to explorer
+6. `components/forms/status-check-form.tsx` - Pass file props to explorer
+7. `components/forms/delivery-form.tsx` - Pass file props to explorer
+8. `components/dialogs/manage-jsons-dialog.tsx` - Update interface
+9. `components/selectors/json-selector.tsx` - Update interface
+
+**Optional (if not mapping in forms)**:
+10. `components/json/interface/json-explorer.tsx` - Update interface
+
+### 14.11 Success Criteria
+
+**Functionality**:
+- Files uploaded via SourceBodyUpload appear in JsonSelector dropdown
+- Files uploaded via ManageJsonsDialog appear in all views
+- File selection works from JsonSelector
+- File removal works from ManageJsonsDialog
+- Active file synchronizes across all components
+- Automatic rendering still works seamlessly
+
+**Architecture**:
+- Clean separation: SourceBodyUpload for upload, Mappers for state, JsonExplorer for display
+- Controlled component pattern properly implemented
+- Single source of truth for file state (mappers)
+- Bidirectional data flow working correctly
+
+**User Experience**:
+- No jarring transitions or component switches
+- Files visible everywhere they should be
+- Intuitive file management interface
+- Consistent behavior across all forms
+- No duplicate files or state synchronization issues
+
+**Code Quality**:
+- Consistent JsonFile interface across all components
+- Clean, maintainable callback patterns
+- Proper TypeScript typing throughout
+- No unnecessary re-renders or state updates
+- Well-documented component relationships
+
+This phase completes the file management integration, creating a unified system where files flow seamlessly between SourceBodyUpload, mappers, JsonExplorer, and ManageJsonsDialog, all while preserving the automatic rendering behavior that transitions smoothly from upload to mapping views.
