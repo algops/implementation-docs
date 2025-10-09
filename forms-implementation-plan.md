@@ -3339,3 +3339,994 @@ If no files remain: shows empty state
 - Well-documented component relationships
 
 This phase completes the file management integration, creating a unified system where files flow seamlessly between SourceBodyUpload, mappers, JsonExplorer, and ManageJsonsDialog, all while preserving the automatic rendering behavior that transitions smoothly from upload to mapping views.
+
+## Phase 15: Architectural Refactor - Component State Ownership and Form Orchestration
+
+### Overview
+Eliminate unnecessary re-renders by refactoring to proper component-level state ownership. Components manage their own state internally and expose data to parent forms via refs. Forms become orchestrators responsible for collecting component data, validation, and assembling final JSON templates for submission.
+
+### Executive Summary
+
+**Goal**: Fix the re-rendering cascade by moving state ownership from forms to components, implementing ref-based data collection, and establishing forms as orchestrators rather than state managers.
+
+**Current Architecture Problem**:
+Forms lift all state from components:
+- Form owns metadata state (method, url, headers)
+- Form owns load balancing state (concurrency, timeout)
+- Form owns JSON data state (requestData, responseData)
+- Every keystroke in ANY component updates form state
+- Form re-renders trigger cascade through all children
+- Mappers reprocess JSON on every form re-render
+- 100ms+ lag, broken focus management
+
+**Root Cause**: State ownership violation - forms manage state that belongs to components, creating tight coupling and re-render cascade.
+
+**Solution**: Move state ownership to components. Forms collect data only on submit via refs. Components become autonomous, forms become orchestrators.
+
+**Impact**:
+- Typing in URL: No form re-render, no cascade
+- Focus redirection: Works immediately
+- JSON reprocessing: Only when JSON actually changes
+- Component independence: Each component manages itself
+- Form simplicity: Just orchestration and validation
+- User experience: Instant, smooth, professional
+
+### 15.1 Complete Component Inventory and Current State Analysis
+
+#### Form Components (3 Total)
+
+**RunRequestForm** - `components/forms/run-request-form.tsx`
+- Current state ownership: headers, method, url, loadBalancing, requestData, responseData
+- Child components: RequestMetadataForm, JsonRequestMapper, JsonResponseMapper, LoadBalancingForm
+- Unique features: LoadBalancingForm (concurrency, timeout)
+- Output template: run_request_template with request/response variable mappings
+
+**StatusCheckForm** - `components/forms/status-check-form.tsx`
+- Current state ownership: statusUrl, checkMethod, headers, requestData, responseData
+- Child components: RequestMetadataForm, JsonRequestMapper, JsonResponseMapper
+- **⚠️ Issue 1 - Unnecessary Field Transformation**: Stores as checkMethod/statusUrl but transforms to method/url for RequestMetadataForm (lines 145-148), no other form does this
+- Output template: status_request_template with request/response variable mappings
+- **Fix Required**: Standardize to use method/url like RunRequestForm and DeliveryForm
+
+**DeliveryForm** - `components/forms/delivery-form.tsx`
+- Current state ownership: url, method, headers, requestData, resultData
+- Child components: RequestMetadataForm, JsonRequestMapper, JsonResultMapper
+- Unique features: Uses JsonResultMapper (not JsonResponseMapper)
+- **⚠️ Issue 2 - Variable Name Mismatch**: Variable named `responseMapper` but contains JsonResultMapper (line 99), should be `resultMapper`
+- Output template: delivery_request_template with object/datapoint mappings (not variable mappings)
+- **Fix Required**: Rename `responseMapper` variable to `resultMapper` for clarity
+
+#### Form Sub-Components (2 Total)
+
+**RequestMetadataForm** - `components/forms/blocks/request-metadata.tsx`
+- Current state: Has internal state for metadata and headers (lines 43-46)
+- Current props: Receives initial values + onChange callbacks
+- Current behavior: Hybrid - has internal state but calls parent callbacks on every change
+- Current problem: Duplicate state causes unnecessary re-renders and focus issues
+- Used by: All three forms (with different field mappings)
+
+**LoadBalancingForm** - `components/forms/blocks/load-balancing.tsx`
+- Current state: Has internal state for concurrency and timeout (lines 27-28)
+- Current props: Receives initial values + onChange callbacks  
+- Current behavior: Hybrid - has internal state but calls parent callbacks on every change
+- Current problem: Every keystroke triggers parent form re-render
+- Used by: Only RunRequestForm
+
+#### Mapper Components (3 Total)
+
+**JsonRequestMapper** - `components/json/request/json-request-mapper.tsx`
+- Current props interface (lines 44-61):
+  - `data?: any` - JSON data to process
+  - `requestAndResponseVariableMappings: RequestAndResponseVariableMappings` - variable mapping config
+  - `showUpload?: boolean` - whether to show upload interface
+  - `uploadLabel?: string` - upload button label
+  - `onDataChange?: (data: any) => void` - callback when data changes
+  - `onProcessedData?: (processedData) => React.ReactNode` - render prop for processed data
+- Internal state: basePaths, fullPaths, processing flags, jsonFiles, activeFileId
+- Processing pipeline: 6 sequential useEffects (lines 185-256)
+- File management: Built-in (lines 84-86)
+- Current problem: Reprocesses on every prop change, even when data unchanged
+- Used by: All three forms
+
+**JsonResponseMapper** - `components/json/response/json-response-mapper.tsx`
+- Current props interface (lines 44-61):
+  - Same as JsonRequestMapper
+  - Uses `requestAndResponseVariableMappings` for response variable mappings
+- Internal state: Same as JsonRequestMapper
+- Processing pipeline: Identical to JsonRequestMapper
+- File management: Built-in (lines 84-86)
+- Current problem: Same reprocessing issue as JsonRequestMapper
+- Used by: RunRequestForm and StatusCheckForm
+
+**JsonResultMapper** - `components/json/response/json-result-mapper.tsx`
+- Current props interface (lines 52-69):
+  - `data?: any` - JSON data to process
+  - `objectsAndDatapointsMappings?: Mappings` - object/datapoint mapping config (different from variable mappings)
+  - `showUpload?: boolean` - whether to show upload interface
+  - `uploadLabel?: string` - upload button label
+  - `onDataChange?: (data: any) => void` - callback when data changes
+  - `onProcessedData?: (processedData) => React.ReactNode` - render prop for processed data
+- Internal state: basePaths, fullPaths (with objectMappings, datapointMappings), processing flags, jsonFiles, activeFileId
+- Processing pipeline: Similar to other mappers but with object/datapoint logic
+- File management: Built-in
+- Current problem: Same reprocessing issue
+- Used by: Only DeliveryForm
+- Key difference: Maps to object types and datapoints instead of variables
+
+#### Supporting Components (Not Modified in This Phase)
+
+**SourceRequestResponseAccordion** - `components/accordions/source-request-response-accordion.tsx`
+- Purpose: Wrapper that organizes RequestMetadataForm and mappers
+- Current behavior: Receives mapper components as props, renders them
+- No state management: Just presentation wrapper
+- Not modified: No changes needed, receives components as children
+
+**SourceBodyUpload** - `components/json/interface/source-body-upload.tsx`
+- Purpose: File upload interface with tabs (upload/text/request)
+- Current behavior: Controlled component (after Phase 14)
+- Props: files, activeFileId, onFilesChange, onActiveFileIdChange, onJsonDataChange
+- Used by: All three mappers internally
+- Not modified: Already has proper interface
+
+**JsonExplorer** - `components/json/interface/json-explorer.tsx`
+- Purpose: Displays processed JSON with mappings
+- Current behavior: Receives processed data from mappers
+- Props: basePaths, fullPaths, statistics, files, currentFile, file management callbacks
+- Used by: All mappers via onProcessedData render prop
+- Not modified: Just receives data, doesn't manage it
+
+#### Identified Inconsistencies to Fix
+
+**Issue 1: StatusCheckForm Field Name Transformation**
+- **Location**: StatusCheckForm lines 10-11, 29-30, 145, 147-148
+- **Problem**: Uses `checkMethod` and `statusUrl` internally, transforms to/from `method` and `url` for RequestMetadataForm
+- **Impact**: Unnecessary complexity, no other form does this, potential for bugs
+- **Fix**: Standardize to use `method` and `url` like RunRequestForm and DeliveryForm
+- **Benefit**: Consistent field naming, simpler code, no transformation logic
+
+**Issue 2: DeliveryForm Variable Name Mismatch**
+- **Location**: DeliveryForm lines 99, 157
+- **Problem**: Variable named `responseMapper` contains `JsonResultMapper` component
+- **Impact**: Confusing naming, misleading variable name
+- **Fix**: Rename variable from `responseMapper` to `resultMapper`
+- **Benefit**: Clear naming that matches component type and state variable (resultData)
+
+Both fixes are incorporated into Phase 15 implementation steps and will be applied during form refactoring.
+
+### 15.2 Target Architecture - Component State Ownership with Ref-Based Data Collection
+
+#### Architecture Principles
+
+**Component Autonomy**:
+- Each component owns and manages its own state
+- Components are self-contained and reusable
+- Components don't notify parents on intermediate changes
+- Components expose final data via refs when requested
+
+**Form Orchestration**:
+- Forms hold refs to all child components
+- Forms don't manage component state
+- Forms collect data only when needed (validation, submit)
+- Forms assemble component data into final JSON templates
+- Forms handle overall validation logic
+
+**Data Flow**:
+- User interaction → Component internal state updates (no parent notification)
+- Form submit → Form calls ref.current.getData() on each component
+- Component returns its current state via ref
+- Form assembles all component data into JSON template
+- Form validates complete data
+- Form calls onSubmit with assembled template
+
+#### Ref-Based Interface Pattern
+
+**Component Exposes Data via useImperativeHandle**:
+```typescript
+interface ComponentRefHandle {
+  getData: () => ComponentData
+  validate: () => boolean | ValidationErrors
+  reset?: () => void
+}
+
+export const ComponentName = forwardRef<ComponentRefHandle, ComponentProps>((props, ref) => {
+  const [internalState, setInternalState] = useState(...)
+  
+  useImperativeHandle(ref, () => ({
+    getData: () => internalState,
+    validate: () => /* validation logic */,
+    reset: () => setInternalState(initialState)
+  }))
+  
+  return (/* component UI */)
+})
+```
+
+**Form Collects Data via Refs**:
+```typescript
+export function FormName({ onSubmit }) {
+  const componentRef = useRef<ComponentRefHandle>(null)
+  
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    
+    const data = componentRef.current?.getData()
+    const isValid = componentRef.current?.validate()
+    
+    if (isValid) {
+      onSubmit(assembleTemplate(data))
+    }
+  }
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <ComponentName ref={componentRef} />
+    </form>
+  )
+}
+```
+
+### 15.3 Component-Specific Refactoring Requirements
+
+#### 15.3.1 RequestMetadataForm Refactoring
+
+**File**: `components/forms/blocks/request-metadata.tsx`
+
+**Current State** (lines 43-46):
+- Has internal state for metadata and headers
+- Calls parent callbacks on every change (immediate notification)
+- Hybrid pattern causes duplicate state and re-render issues
+
+**Target State**: Autonomous component with ref-based data exposure
+
+**New Props Interface**:
+```typescript
+interface RequestMetadataFormProps {
+  initialMetadata?: { method: string, url: string }
+  initialHeaders?: RequestHeader[]
+  // Remove: onMetadataChange, onHeadersChange (no parent notifications)
+}
+```
+
+**New Ref Interface**:
+```typescript
+interface RequestMetadataFormRef {
+  getData: () => {
+    metadata: { method: string, url: string }
+    headers: RequestHeader[]
+  }
+  validate: () => boolean | {
+    metadataErrors?: string[]
+    headerErrors?: Array<{id: string, error: string}>
+  }
+  reset: () => void
+}
+```
+
+**Internal State Management**:
+- Keeps internal state for metadata and headers
+- Removes all parent callback calls
+- User types → internal state updates only
+- No form re-renders triggered
+- Focus management works correctly
+
+**Implementation Approach**:
+- Convert to forwardRef component
+- Add useImperativeHandle for getData, validate, reset
+- Remove onMetadataChange and onHeadersChange calls
+- Keep all existing UI and interaction logic
+- Ensure headers always has at least one empty row
+
+**Validation Logic**:
+- getData: Returns current state as-is
+- validate: Checks method is set, url is valid, headers are complete
+- reset: Returns to initial values
+
+#### 15.3.2 LoadBalancingForm Refactoring
+
+**File**: `components/forms/blocks/load-balancing.tsx`
+
+**Current State** (lines 27-28):
+- Has internal state for concurrency and timeout
+- Calls parent callbacks on every change
+- Same hybrid pattern as RequestMetadataForm
+
+**Target State**: Autonomous component with ref-based data exposure
+
+**New Props Interface**:
+```typescript
+interface LoadBalancingFormProps {
+  initialConcurrency?: number
+  initialTimeout?: number
+  // Remove: onConcurrencyChange, onTimeoutChange
+  title?: string
+  description?: string
+  collapsible?: boolean
+  defaultExpanded?: boolean
+}
+```
+
+**New Ref Interface**:
+```typescript
+interface LoadBalancingFormRef {
+  getData: () => {
+    concurrency: number
+    timeout: number
+  }
+  validate: () => boolean | {
+    concurrencyError?: string
+    timeoutError?: string
+  }
+  reset: () => void
+}
+```
+
+**Internal State Management**:
+- Keeps internal state for concurrency and timeout
+- Removes parent callback calls
+- User types → internal state updates only
+- No form re-renders
+
+**Implementation Approach**:
+- Convert to forwardRef component
+- Add useImperativeHandle for getData, validate, reset
+- Remove onConcurrencyChange and onTimeoutChange calls
+- Keep all existing NumberInput logic
+
+**Validation Logic**:
+- validate: Checks concurrency > 0, timeout > 0
+- getData: Returns current values
+- reset: Returns to initial values (10, 30)
+
+#### 15.3.3 JsonRequestMapper Refactoring
+
+**File**: `components/json/request/json-request-mapper.tsx`
+
+**Current Behavior**:
+- Already manages its own state (basePaths, fullPaths, jsonFiles, activeFileId)
+- Uses render prop pattern (onProcessedData) to pass processed data to parent
+- Has onDataChange callback that notifies parent of raw JSON changes
+
+**Target State**: Add ref-based data exposure while keeping existing render prop
+
+**Keep Current Props**:
+- data?: any (for pre-loading existing JSON)
+- requestAndResponseVariableMappings (for existing mappings to display)
+- showUpload, uploadLabel (UI controls)
+- onProcessedData (render prop for JsonExplorer - keep as is)
+
+**New Ref Interface**:
+```typescript
+interface JsonRequestMapperRef {
+  getData: () => {
+    jsonData: any | null
+    files: JsonFile[]
+    activeFileId: string | null
+    variableMappings: {
+      [variableName: string]: {
+        path: string[]
+        status: string
+      }
+    }
+  }
+  validate: () => boolean | {
+    jsonError?: string
+    mappingErrors?: string[]
+  }
+  reset: () => void
+}
+```
+
+**Implementation Approach**:
+- Convert to forwardRef component
+- Add useImperativeHandle
+- Keep all existing processing pipeline (generatePathData, assignVariableToFullPath, etc.)
+- Keep onProcessedData render prop pattern
+- Remove onDataChange callback (parent gets data via ref.current.getData())
+- getData extracts variable mappings from processed fullPaths
+
+**Data Return Structure**:
+- jsonData: Current active file's content
+- files: All uploaded JSON files
+- activeFileId: Currently selected file
+- variableMappings: Extracted from fullPaths where variableMappings exist
+
+**Validation Logic**:
+- validate: Checks if JSON is uploaded, if required variables are mapped
+- Returns errors for missing required mappings
+
+#### 15.3.4 JsonResponseMapper Refactoring
+
+**File**: `components/json/response/json-response-mapper.tsx`
+
+**Current Behavior**:
+- Identical to JsonRequestMapper
+- Uses requestAndResponseVariableMappings for response variables
+- Same state management and processing pipeline
+
+**Target State**: Add ref-based data exposure (same as JsonRequestMapper)
+
+**New Ref Interface**: (Identical to JsonRequestMapper)
+```typescript
+interface JsonResponseMapperRef {
+  getData: () => {
+    jsonData: any | null
+    files: JsonFile[]
+    activeFileId: string | null
+    variableMappings: {
+      [variableName: string]: {
+        path: string[]
+        status: string
+        translations?: { [key: string]: string }
+      }
+    }
+  }
+  validate: () => boolean | { jsonError?: string, mappingErrors?: string[] }
+  reset: () => void
+}
+```
+
+**Implementation Approach**: Same as JsonRequestMapper
+
+**Note**: Response mapper includes optional translations field in variableMappings
+
+#### 15.3.5 JsonResultMapper Refactoring
+
+**File**: `components/json/response/json-result-mapper.tsx`
+
+**Current Behavior**:
+- Similar to other mappers but with different mapping structure
+- Uses objectsAndDatapointsMappings instead of requestAndResponseVariableMappings
+- Processes object type mappings and datapoint mappings
+
+**Target State**: Add ref-based data exposure with object/datapoint structure
+
+**New Ref Interface**: (Different from request/response mappers)
+```typescript
+interface JsonResultMapperRef {
+  getData: () => {
+    jsonData: any | null
+    files: JsonFile[]
+    activeFileId: string | null
+    objectMappings: Array<{
+      object_type_id: string
+      key_mapping: string[]
+      key_mapping_type: "value" | "key"
+      status: "mapped" | "recommendation" | "issue"
+    }>
+    datapointMappings: Array<{
+      datapoint_id: string
+      object_type_id: string
+      key_mapping: string[]
+      key_mapping_type: "value" | "key"
+      status: "mapped" | "recommendation" | "issue"
+    }>
+  }
+  validate: () => boolean | {
+    jsonError?: string
+    objectMappingErrors?: string[]
+    datapointMappingErrors?: string[]
+  }
+  reset: () => void
+}
+```
+
+**Implementation Approach**:
+- Convert to forwardRef component
+- Add useImperativeHandle
+- Keep all existing processing pipeline
+- Keep onProcessedData render prop
+- Remove onDataChange callback
+- getData extracts object/datapoint mappings from processed fullPaths
+
+**Data Return Structure**:
+- jsonData: Current active file's content
+- files: All uploaded JSON files
+- activeFileId: Currently selected file
+- objectMappings: Extracted from fullPaths.objectMappings
+- datapointMappings: Extracted from fullPaths.datapointMappings
+
+**Validation Logic**:
+- validate: Checks if JSON uploaded, if required object types mapped, if required datapoints mapped
+- Returns separate errors for object mappings vs datapoint mappings
+
+### 15.4 Form-Specific Implementations
+
+#### 15.4.1 RunRequestForm Refactoring
+
+**File**: `components/forms/run-request-form.tsx`
+
+**Current State**:
+- Owns all state: formData (method, url, headers, loadBalancing), requestData, responseData
+- Passes data via props to all components
+- Every component change triggers form re-render
+
+**Target State**: Ref-based orchestrator
+
+**New Form Structure**:
+```typescript
+interface RunRequestFormProps {
+  initialData?: {
+    metadata?: { method: string, url: string }
+    headers?: RequestHeader[]
+    loadBalancing?: { concurrency: number, timeout: number }
+    // Can include initial JSON data if editing existing source
+  }
+  onSubmit: (template: RunRequestTemplate) => void
+  isLoading?: boolean
+}
+
+interface RunRequestTemplate {
+  run_request_template: {
+    method: string
+    url: string
+    headers: RequestHeader[]
+    body?: any // From request JSON
+    // Variable mappings embedded in body template
+  }
+  response_template?: {
+    // Variable mappings from response JSON
+  }
+  timeout: number
+  max_concurrency: number
+}
+```
+
+**Ref Declarations**:
+```typescript
+const requestMetadataRef = useRef<RequestMetadataFormRef>(null)
+const loadBalancingRef = useRef<LoadBalancingFormRef>(null)
+const requestMapperRef = useRef<JsonRequestMapperRef>(null)
+const responseMapperRef = useRef<JsonResponseMapperRef>(null)
+```
+
+**Form Submit Handler**:
+```typescript
+const handleSubmit = (e: FormEvent) => {
+  e.preventDefault()
+  
+  // Collect data from all components via refs
+  const metadataData = requestMetadataRef.current?.getData()
+  const loadBalancingData = loadBalancingRef.current?.getData()
+  const requestMapperData = requestMapperRef.current?.getData()
+  const responseMapperData = responseMapperRef.current?.getData()
+  
+  // Validate all components
+  const metadataValid = requestMetadataRef.current?.validate()
+  const loadBalancingValid = loadBalancingRef.current?.validate()
+  const requestMapperValid = requestMapperRef.current?.validate()
+  const responseMapperValid = responseMapperRef.current?.validate()
+  
+  if (!metadataValid || !loadBalancingValid || !requestMapperValid || !responseMapperValid) {
+    // Show validation errors
+    return
+  }
+  
+  // Assemble run_request_template
+  const template: RunRequestTemplate = {
+    run_request_template: {
+      method: metadataData.metadata.method,
+      url: metadataData.metadata.url,
+      headers: metadataData.headers,
+      body: requestMapperData.jsonData,
+      // Embed variable mappings from requestMapperData.variableMappings
+    },
+    response_template: {
+      // Embed variable mappings from responseMapperData.variableMappings
+    },
+    timeout: loadBalancingData.timeout,
+    max_concurrency: loadBalancingData.concurrency
+  }
+  
+  onSubmit(template)
+}
+```
+
+**Render Structure**:
+```typescript
+return (
+  <form onSubmit={handleSubmit}>
+    <SourceRequestResponseAccordion type="request" requestType="run_request">
+      <RequestMetadataForm ref={requestMetadataRef} initialMetadata={...} />
+      <JsonRequestMapper ref={requestMapperRef} />
+    </SourceRequestResponseAccordion>
+    
+    <SourceRequestResponseAccordion type="response" requestType="run_request">
+      <JsonResponseMapper ref={responseMapperRef} />
+    </SourceRequestResponseAccordion>
+    
+    <LoadBalancingForm ref={loadBalancingRef} />
+    
+    <PrimaryButton type="submit">Save Configuration</PrimaryButton>
+  </form>
+)
+```
+
+**Key Changes**:
+- No formData state
+- No requestData/responseData state
+- No onChange callbacks
+- Data collected only on submit via refs
+- Component changes don't trigger form re-renders
+
+#### 15.4.2 StatusCheckForm Refactoring
+
+**File**: `components/forms/status-check-form.tsx`
+
+**Current State**:
+- Owns state: formData (statusUrl, checkMethod, headers), requestData, responseData
+- Same re-render issues as RunRequestForm
+- **Issue 1**: Unnecessary field name transformation between form and component
+
+**Issue 1 Fix - Standardize Field Names**:
+
+**Current Problem**:
+- Lines 10-11: FormData interface uses `statusUrl` and `checkMethod`
+- Lines 29-30: State initialization uses `statusUrl` and `checkMethod`
+- Line 145: Transforms to `{ method: formData.checkMethod, url: formData.statusUrl }` when passing to RequestMetadataForm
+- Lines 147-148: Transforms back `checkMethod = metadata.method`, `statusUrl = metadata.url`
+- No other form does this transformation
+
+**Solution - Standardize to method/url**:
+- Change FormData interface fields from `statusUrl, checkMethod` to `url, method`
+- Remove transformation logic (lines 145, 147-148)
+- Match RunRequestForm and DeliveryForm pattern
+- Simpler, clearer, consistent
+
+**Target State**: Ref-based orchestrator with standardized field names
+
+**New Form Structure**:
+```typescript
+interface StatusCheckFormProps {
+  initialData?: {
+    metadata?: { method: string, url: string } // Changed from checkMethod/statusUrl
+    headers?: RequestHeader[]
+  }
+  onSubmit: (template: StatusCheckTemplate) => void
+  isLoading?: boolean
+}
+
+interface StatusCheckTemplate {
+  status_request_template: {
+    method: string
+    url: string
+    headers: RequestHeader[]
+    body?: any // From request JSON
+  }
+  status_response_template?: {
+    // Variable mappings from response JSON
+  }
+}
+```
+
+**Ref Declarations**:
+```typescript
+const requestMetadataRef = useRef<RequestMetadataFormRef>(null)
+const requestMapperRef = useRef<JsonRequestMapperRef>(null)
+const responseMapperRef = useRef<JsonResponseMapperRef>(null)
+```
+
+**Form Submit Handler**:
+```typescript
+const handleSubmit = (e: FormEvent) => {
+  e.preventDefault()
+  
+  const metadataData = requestMetadataRef.current?.getData()
+  const requestMapperData = requestMapperRef.current?.getData()
+  const responseMapperData = responseMapperRef.current?.getData()
+  
+  // Validate
+  const metadataValid = requestMetadataRef.current?.validate()
+  const requestMapperValid = requestMapperRef.current?.validate()
+  const responseMapperValid = responseMapperRef.current?.validate()
+  
+  if (!metadataValid || !requestMapperValid || !responseMapperValid) {
+    return
+  }
+  
+  // Assemble status_request_template
+  const template: StatusCheckTemplate = {
+    status_request_template: {
+      method: metadataData.metadata.method, // No transformation needed after fix
+      url: metadataData.metadata.url, // No transformation needed after fix
+      headers: metadataData.headers,
+      body: requestMapperData.jsonData,
+    },
+    status_response_template: {
+      // Embed variable mappings from responseMapperData.variableMappings
+    }
+  }
+  
+  onSubmit(template)
+}
+```
+
+**Key Differences from RunRequestForm**:
+- No LoadBalancingForm component
+- Otherwise identical pattern (after Issue 1 fix)
+
+#### 15.4.3 DeliveryForm Refactoring
+
+**File**: `components/forms/delivery-form.tsx`
+
+**Current State**:
+- Owns state: formData (url, method, headers), requestData, resultData
+- Uses JsonResultMapper (not JsonResponseMapper)
+- Same re-render issues
+- **Issue 2**: Variable named `responseMapper` but contains JsonResultMapper
+
+**Issue 2 Fix - Rename Variable to Match Component**:
+
+**Current Problem**:
+- Line 99: Variable declared as `const responseMapper = (`
+- Line 100: Contains `<JsonResultMapper` component (not JsonResponseMapper)
+- Line 157: Passed as `resultMapper={responseMapper}` to accordion
+- Naming mismatch: variable name suggests response but it's actually result
+
+**Solution - Rename to resultMapper**:
+- Change variable declaration from `responseMapper` to `resultMapper` (line 99)
+- Update accordion prop to use same variable: `resultMapper={resultMapper}` (line 157)
+- Matches component type (JsonResultMapper)
+- Consistent with state variable naming (resultData)
+- Clear and unambiguous
+
+**Target State**: Ref-based orchestrator with standardized naming
+
+**New Form Structure**:
+```typescript
+interface DeliveryFormProps {
+  initialData?: {
+    metadata?: { method: string, url: string }
+    headers?: RequestHeader[]
+  }
+  onSubmit: (template: DeliveryTemplate) => void
+  isLoading?: boolean
+}
+
+interface DeliveryTemplate {
+  delivery_request_template: {
+    method: string
+    url: string
+    headers: RequestHeader[]
+    body?: any // From request JSON
+  }
+  object_source_mappings: Array<ObjectSourceMapping>
+  datapoint_source_mappings: Array<DatapointSourceMapping>
+}
+```
+
+**Ref Declarations**:
+```typescript
+const requestMetadataRef = useRef<RequestMetadataFormRef>(null)
+const requestMapperRef = useRef<JsonRequestMapperRef>(null)
+const resultMapperRef = useRef<JsonResultMapperRef>(null) // Note: ResultMapper, not ResponseMapper
+```
+
+**Form Submit Handler**:
+```typescript
+const handleSubmit = (e: FormEvent) => {
+  e.preventDefault()
+  
+  const metadataData = requestMetadataRef.current?.getData()
+  const requestMapperData = requestMapperRef.current?.getData()
+  const resultMapperData = resultMapperRef.current?.getData()
+  
+  // Validate
+  const metadataValid = requestMetadataRef.current?.validate()
+  const requestMapperValid = requestMapperRef.current?.validate()
+  const resultMapperValid = resultMapperRef.current?.validate()
+  
+  if (!metadataValid || !requestMapperValid || !resultMapperValid) {
+    return
+  }
+  
+  // Assemble delivery_request_template
+  const template: DeliveryTemplate = {
+    delivery_request_template: {
+      method: metadataData.metadata.method,
+      url: metadataData.metadata.url,
+      headers: metadataData.headers,
+      body: requestMapperData.jsonData,
+    },
+    object_source_mappings: resultMapperData.objectMappings,
+    datapoint_source_mappings: resultMapperData.datapointMappings
+  }
+  
+  onSubmit(template)
+}
+```
+
+**Key Differences from Other Forms**:
+- Uses JsonResultMapper instead of JsonResponseMapper
+- Returns objectMappings and datapointMappings instead of variableMappings
+- Different template structure (object/datapoint mappings)
+- Variable renamed from `responseMapper` to `resultMapper` (Issue 2 fix)
+
+### 15.5 Implementation Steps
+
+#### Step 1: Refactor Form Sub-Components (2 components)
+
+**RequestMetadataForm**:
+1. Convert to forwardRef component
+2. Remove all onChange callback props
+3. Remove internal state sync with props
+4. Add useImperativeHandle with getData, validate, reset
+5. Keep all existing UI logic
+6. Test focus redirection works correctly
+
+**LoadBalancingForm**:
+1. Convert to forwardRef component  
+2. Remove onConcurrencyChange and onTimeoutChange props
+3. Add useImperativeHandle with getData, validate, reset
+4. Keep all existing NumberInput logic
+5. Test component isolation
+
+#### Step 2: Refactor Mapper Components (3 components)
+
+**JsonRequestMapper**:
+1. Convert to forwardRef component
+2. Add useImperativeHandle with getData, validate, reset
+3. Remove onDataChange callback
+4. Keep onProcessedData render prop (for JsonExplorer)
+5. getData extracts variableMappings from processed fullPaths
+6. Test JSON processing still works
+
+**JsonResponseMapper**:
+1. Same changes as JsonRequestMapper
+2. Include translations in variableMappings extraction
+3. Test with response data
+
+**JsonResultMapper**:
+1. Convert to forwardRef component
+2. Add useImperativeHandle with getData, validate, reset
+3. Remove onDataChange callback
+4. getData extracts objectMappings and datapointMappings
+5. Test object/datapoint mapping extraction
+
+#### Step 3: Refactor Form Components (3 forms)
+
+**RunRequestForm**:
+1. Remove all state (formData, requestData, responseData)
+2. Add refs for all child components
+3. Remove all onChange callbacks
+4. Implement handleSubmit with ref.current.getData()
+5. Assemble run_request_template from component data
+6. Test form submission
+7. Test that typing doesn't cause form re-renders
+
+**StatusCheckForm**:
+1. **Issue 1 Fix**: Change FormData interface fields from `statusUrl, checkMethod` to `url, method`
+2. **Issue 1 Fix**: Update state initialization to use `method, url` instead of `checkMethod, statusUrl`
+3. **Issue 1 Fix**: Remove transformation logic at lines 145, 147-148
+4. Remove all state (formData, requestData, responseData)
+5. Add refs for all child components
+6. Remove all onChange callbacks
+7. Implement handleSubmit with ref.current.getData()
+8. Assemble status_request_template from component data (no transformation needed)
+9. Test form submission
+10. Verify field names are consistent throughout
+
+**DeliveryForm**:
+1. **Issue 2 Fix**: Rename variable from `responseMapper` to `resultMapper` (line 99)
+2. **Issue 2 Fix**: Update accordion prop from `resultMapper={responseMapper}` to `resultMapper={resultMapper}` (line 157)
+3. Remove all state (formData, requestData, resultData)
+4. Add refs for all child components  
+5. Remove all onChange callbacks
+6. Implement handleSubmit with ref.current.getData()
+7. Assemble delivery_request_template with object/datapoint mappings
+8. Test form submission
+9. Verify variable naming is clear throughout
+
+#### Step 4: Update Accordion Integration
+
+**SourceRequestResponseAccordion**:
+- No changes needed
+- Already receives components as props
+- Continues to render them in accordion wrapper
+
+#### Step 5: Verify Naming and Consistency Fixes
+
+**Issue 1 Verification (StatusCheckForm)**:
+1. Verify FormData interface uses `method, url` (not `checkMethod, statusUrl`)
+2. Verify state initialization uses `method, url`
+3. Verify no transformation logic exists in accordion props
+4. Verify form submit handler uses direct field access
+5. Test that StatusCheckForm behaves identically to RunRequestForm
+
+**Issue 2 Verification (DeliveryForm)**:
+1. Verify variable named `resultMapper` (not `responseMapper`)
+2. Verify accordion receives `resultMapper={resultMapper}`
+3. Verify all references use `resultMapper` consistently
+4. Test that naming is clear and matches component type
+
+#### Step 6: Testing and Validation
+
+1. Test typing in URL field - should not trigger form re-render
+2. Test changing method dropdown - focus should redirect to URL
+3. Test adding/removing headers - should not trigger form re-render
+4. Test uploading JSON files - should work as before
+5. Test switching between files - should work as before
+6. Test form submission collects all data correctly
+7. Test validation shows errors correctly
+8. Test all three forms have identical patterns (after Issue 1 and 2 fixes)
+9. Verify StatusCheckForm uses method/url consistently
+10. Verify DeliveryForm uses resultMapper naming consistently
+11. Verify no console errors or warnings
+12. Measure performance improvements
+
+### 15.6 Files to Modify
+
+**Form Sub-Components (2 files)**:
+1. `components/forms/blocks/request-metadata.tsx` - Add forwardRef + useImperativeHandle
+2. `components/forms/blocks/load-balancing.tsx` - Add forwardRef + useImperativeHandle
+
+**Mapper Components (3 files)**:
+3. `components/json/request/json-request-mapper.tsx` - Add forwardRef + useImperativeHandle
+4. `components/json/response/json-response-mapper.tsx` - Add forwardRef + useImperativeHandle
+5. `components/json/response/json-result-mapper.tsx` - Add forwardRef + useImperativeHandle
+
+**Form Components (3 files)**:
+6. `components/forms/run-request-form.tsx` - Remove state, add refs, collect data on submit
+7. `components/forms/status-check-form.tsx` - **Issue 1 Fix**: Standardize to method/url fields, remove transformation, remove state, add refs
+8. `components/forms/delivery-form.tsx` - **Issue 2 Fix**: Rename responseMapper to resultMapper, remove state, add refs
+
+**Total Files**: 8 files
+
+**Specific Line Changes for Issue Fixes**:
+
+**StatusCheckForm** (Issue 1):
+- Lines 10-12: Change `statusUrl: string, checkMethod: string` to `url: string, method: string`
+- Lines 29-31: Change state init to `url: initialData.url, method: initialData.method`
+- Line 145: Remove transformation, use `{ method: formData.method, url: formData.url }`
+- Lines 147-148: Remove transformation, use `updateField('method', metadata.method)` and `updateField('url', metadata.url)`
+
+**DeliveryForm** (Issue 2):
+- Line 99: Change `const responseMapper = (` to `const resultMapper = (`
+- Line 157: Change `resultMapper={responseMapper}` to `resultMapper={resultMapper}`
+
+### 15.7 Success Criteria
+
+**Performance**:
+- Typing in URL responds instantly (no form re-render)
+- Focus redirection works 100% of the time
+- No unnecessary JSON reprocessing
+- Component changes isolated to component only
+- Smooth, lag-free user experience
+
+**Functionality**:
+- All form features work identically to before
+- JSON upload and processing unchanged
+- File management works correctly
+- Form submission collects all data via refs
+- Validation works correctly
+- Template assembly works correctly
+
+**Architecture**:
+- Components own their state
+- Forms orchestrate via refs
+- No lifted state in forms
+- Clean component boundaries
+- Easy to test in isolation
+
+**Consistency**:
+- All forms use identical ref-based pattern
+- All components expose identical ref interface structure
+- StatusCheckForm standardized to use method/url (Issue 1 fixed)
+- DeliveryForm uses resultMapper variable name (Issue 2 fixed)
+- Code structure is consistent across all forms
+- Easy to maintain and extend
+
+**Code Quality**:
+- No circular dependencies
+- No prop drilling
+- Clear data flow via refs
+- Well-documented ref interfaces
+- TypeScript types correct throughout
+
+**User Experience**:
+- Instant feedback on all interactions
+- Smooth interactions throughout
+- No stuttering or lag
+- Focus management works correctly
+- Professional, polished feel
+
+This phase eliminates the re-rendering cascade by moving state ownership to components and implementing proper ref-based data collection, creating autonomous components and simple orchestrating forms.

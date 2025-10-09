@@ -378,7 +378,7 @@ Implement comprehensive page layouts for the main entity pages (sources, activit
 
 ## Phase 5: New Page Creation
 
-### 5.1 Source Page
+### 5.1 Source Page (Source Detail Page)
 **Data Source**: Individual source configuration
 **Page Layout Options**:
 1. **Page Header** - Source name, status badge, action buttons
@@ -407,6 +407,172 @@ Implement comprehensive page layouts for the main entity pages (sources, activit
    - **BaseAccordion** (title: "Output mappings") with **JsonResponseMapper** component
    - **BaseAccordion** (title: "Status Check Request") with **StatusCheckForm** component
    - **BaseAccordion** (title: "Deliver Requesty") with **DeliveryForm** component
+
+#### 5.1.1 Template JSON Creation and Variable Extraction
+
+**CRITICAL REQUIREMENT**: When creating a new source, template JSONs need to be created and connected to the forms to enable variable mapping functionality.
+
+**Problem Statement**:
+- When a source is first created, no request/response template JSONs exist yet
+- Without template JSONs, no variables like `<<$url>>`, `<<$method>>`, `<<$status>>` are defined
+- JsonRequestMapper and JsonResponseMapper require `requestAndResponseVariableMappings` with template variables to show progress bar
+- Progress bar tracks variable mapping completion (not JSON path coverage)
+- If 0 template variables exist → progress bar correctly shows 0 (nothing to map yet)
+
+**Required Functionality**:
+
+**1. Template JSON Initialization Function**
+- **Function Name**: `initializeSourceTemplateJsons(sourceId: string, requestType: 'run_request' | 'status_request' | 'delivery_request')`
+- **Purpose**: Create initial template JSON structure for a new source
+- **Location**: `utils/source-utils.ts` (new file)
+- **Logic**:
+  - Create empty template JSON object or use predefined template structure
+  - Initialize `requestAndResponseVariableMappings` object structure
+  - Store template in database or local state
+  - Return initialized template structure
+- **Output**: 
+  ```typescript
+  {
+    RequestResponseMappings: {
+      [sourceId]: {
+        name: sourceName,
+        request: {},  // Empty initially
+        response: {}  // Empty initially
+      }
+    },
+    requestType: requestType,
+    inputType: 'request' | 'response'
+  }
+  ```
+
+**2. Template Variable Extraction Function**
+- **Function Name**: `extractTemplateVariables(templateJson: string): string[]`
+- **Purpose**: Extract variable placeholders from template JSON string
+- **Location**: `utils/source-utils.ts`
+- **Logic**:
+  - Parse template JSON string
+  - Find all variable patterns matching `<<$variableName>>`
+  - Extract unique variable names
+  - Return array of variable names
+- **Example Input**: `{"url": "<<$base_url>>", "method": "<<$http_method>>", "body": {"key": "<<$api_key>>"}}`
+- **Example Output**: `['base_url', 'http_method', 'api_key']`
+
+**3. Template Variable Mapping Creation Function**
+- **Function Name**: `createVariableMappingsFromTemplate(sourceId: string, templateJson: string, requestType: string, inputType: 'request' | 'response')`
+- **Purpose**: Create full variable mappings structure from template JSON
+- **Location**: `utils/source-utils.ts`
+- **Logic**:
+  - Extract variables using `extractTemplateVariables()`
+  - Create mapping structure for each variable
+  - Initialize path arrays as empty `[]`
+  - Set initial status as 'default' (unmapped)
+  - Return complete `requestAndResponseVariableMappings` structure
+- **Output**:
+  ```typescript
+  {
+    RequestResponseMappings: {
+      [sourceId]: {
+        name: sourceName,
+        request: {
+          'base_url': { path: [], status: 'default' },
+          'http_method': { path: [], status: 'default' },
+          'api_key': { path: [], status: 'default' }
+        },
+        response: {}
+      }
+    },
+    requestType: requestType,
+    inputType: inputType
+  }
+  ```
+
+**4. Form Integration Points**
+
+**InferenceForm Integration** (Request Template):
+- User creates/edits request template JSON in form
+- On save/change, call `extractTemplateVariables()` to get variable list
+- Call `createVariableMappingsFromTemplate()` to create mappings structure
+- Pass updated `requestAndResponseVariableMappings` to JsonRequestMapper
+- Progress bar now shows "0 mappings, N remaining" where N = number of variables
+
+**JsonResponseMapper Integration** (Response Template):
+- User uploads/provides sample response JSON
+- System creates template structure for response variable extraction
+- Call `extractTemplateVariables()` on status template if exists
+- Call `createVariableMappingsFromTemplate()` for response variables
+- Pass updated `requestAndResponseVariableMappings` to JsonResponseMapper
+- Progress bar shows response variable mapping completion
+
+**StatusCheckForm Integration** (Status Template):
+- Similar to request template
+- Extract variables from status check template
+- Create mappings for status-specific variables
+- Track status variable mapping completion
+
+**DeliveryForm Integration** (Delivery Template):
+- Similar to request template
+- Extract variables from delivery template
+- Create mappings for delivery-specific variables
+- Track delivery variable mapping completion
+
+**5. Data Flow**
+
+```
+User creates source
+    ↓
+initializeSourceTemplateJsons() → Empty template structure
+    ↓
+User edits request template in InferenceForm → {"url": "<<$base_url>>", "method": "POST"}
+    ↓
+extractTemplateVariables() → ['base_url']
+    ↓
+createVariableMappingsFromTemplate() → Full mappings structure
+    ↓
+JsonRequestMapper receives mappings → Shows progress bar "0 mappings, 1 remaining"
+    ↓
+User uploads sample request JSON → Paths extracted
+    ↓
+User maps "api_url" path → '<<$base_url>>' variable
+    ↓
+Progress bar updates → "1 mapping, 0 remaining"
+```
+
+**6. Database/State Integration**
+
+**Storage Requirements**:
+- Store template JSONs in database (sources table or separate templates table)
+- Store `requestAndResponseVariableMappings` structure
+- Track template version history
+- Save variable-to-path mappings
+
+**API Endpoints Required**:
+- `POST /api/sources/{id}/templates` - Create/update template
+- `GET /api/sources/{id}/templates/{type}` - Get template by type
+- `POST /api/sources/{id}/templates/{type}/variables` - Extract and save variables
+- `PUT /api/sources/{id}/mappings` - Update variable mappings
+- `GET /api/sources/{id}/mappings` - Get current variable mappings
+
+**7. UI/UX Considerations**
+
+**Initial State** (No Template):
+- Show "No template defined" message
+- Show "Create Template" button
+- Progress bar hidden (no variables to map)
+
+**Template Created** (0 Mappings):
+- Show template JSON
+- Show "Upload Sample JSON" button
+- Progress bar shows "0 mappings, N remaining"
+
+**Mapping in Progress**:
+- Progress bar shows current mapping status
+- Highlight unmapped variables
+- Show mapping recommendations if available
+
+**All Mapped**:
+- Progress bar shows "N mappings, 0 remaining"
+- Show success indicator
+- Enable "Deploy" or "Save" actions
 
 ### 5.2 Data Page Enhancement
 **Data Source**: Object type data files
