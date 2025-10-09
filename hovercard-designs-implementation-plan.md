@@ -7,7 +7,150 @@
 - [ ] **NO direct usage of `components/ui/` folder components**
 
 ## Overview
-Implement specialized hovercards that provide contextual database information, real-time status, and detailed insights on hover for various UI elements using the existing hovercard components.
+Implement specialized hovercards that provide contextual database information, real-time status, and detailed insights on hover for various UI elements using standardized hovercard components.
+
+## CRITICAL: Hovercard Standardization Requirements
+
+### BaseHovercard Component - Core Infrastructure
+
+**Purpose**: Single source of truth for all hovercard behavior, ensuring consistency across all contextual information displays.
+
+**Size System**:
+```typescript
+interface HovercardSizeConfig {
+  size?: 'sm' | 'md' | 'lg'
+  // sm: w-64 (256px) - Compact info, status badges, simple tooltips
+  // md: w-80 (320px) - Standard content, mapping details, value information
+  // lg: w-96 (384px) - Complex content, progress statistics, detailed insights
+}
+```
+
+**Visual Styling System**:
+- Background: `bg-content` - Hovercard content background color
+- Shadow: `shadow-xl` - Extra large drop shadow for elevation
+- Border: `border` - Standard 1px border (simpler than dialogs)
+- Border Color: Standard border color from theme
+- Ensures consistent visual hierarchy across all hovercards
+- Provides clear depth separation from background content
+
+**Animation System** (Pattern A - Standardized - Same as Dialogs):
+- Use `useAnimation()` hook with destructured `{ ref, className: animationClass }`
+- Apply ref to HoverCardContent root element
+- Apply animationClass to content wrapper div
+- Consistent fade-in and scale animations for all hovercards
+- Configurable animation duration and easing
+- Disabled animations option for accessibility preferences
+
+**Timing System**:
+```typescript
+interface HovercardTimingConfig {
+  openDelay?: number      // Delay before showing (default: 700ms)
+  closeDelay?: number     // Delay before hiding (default: 0ms)
+}
+```
+
+**Positioning System**:
+```typescript
+interface HovercardPositionConfig {
+  side?: "top" | "right" | "bottom" | "left"     // Default: "top"
+  align?: "start" | "center" | "end"             // Default: "center"
+  followCursor?: boolean                         // Dynamic positioning (default: false)
+}
+```
+
+**Behavior System**:
+```typescript
+interface HovercardBehavior {
+  allowMouseClose?: boolean    // Close on mouse movement (default: true)
+  closeOnScroll?: boolean      // Close on scroll (default: true)
+  persistOnHover?: boolean     // Keep open when hovering content (default: true)
+}
+```
+
+**Button System Standardization**:
+- Only use custom buttons: PrimaryButton, SecondaryButton, TextButton
+- Never use standard Button component from shadcn/ui
+- Consistent action layout with appropriate button types
+- Primary actions use PrimaryButton (rare in hovercards)
+- Secondary actions use SecondaryButton
+- Link-style actions use TextButton (most common)
+- Loading states built into button components
+- Always use `bg-transparent` override for buttons inside hovercards
+
+**Badge System Standardization**:
+- Only use BaseBadge from custom-ui-elements
+- Never use standard Badge component from shadcn/ui
+- Use state prop for semantic meaning: `default | active | recommended | warning | error`
+- Use variant prop for visual style: `default | secondary | destructive | outline`
+- Consistent sizing with size prop: `sm | default | lg`
+
+**Callback Naming Conventions**:
+```typescript
+interface HovercardCallbacks {
+  onAction?: () => void                          // Primary action (most common)
+  onSecondaryAction?: () => void                 // Secondary action
+  onNavigate?: () => void                        // Navigation/exploration action
+  onShowMore?: () => void                        // Expand to see more details
+  onShowAll?: (filter?: string) => void         // Show all items of a type
+  onSelect?: (item: any) => void                 // Select an item
+}
+```
+
+**Core Props Interface**:
+```typescript
+interface BaseHovercardProps {
+  // Content
+  children: React.ReactNode                      // Trigger element
+  content: React.ReactNode                       // Hovercard content
+  
+  // Configuration
+  size?: 'sm' | 'md' | 'lg'                      // Default: 'md'
+  
+  // Positioning
+  side?: "top" | "right" | "bottom" | "left"     // Default: "top"
+  align?: "start" | "center" | "end"             // Default: "center"
+  followCursor?: boolean                         // Default: false
+  
+  // Timing
+  openDelay?: number                             // Default: 700
+  closeDelay?: number                            // Default: 0
+  
+  // Behavior
+  allowMouseClose?: boolean                      // Default: true
+  closeOnScroll?: boolean                        // Default: true
+  persistOnHover?: boolean                       // Default: true
+  
+  // Customization
+  className?: string                             // Additional classes for trigger
+  contentClassName?: string                      // Additional classes for content
+}
+
+// Note: Visual styling is built into BaseHovercard and not configurable via props:
+// - bg-content (hovercard background)
+// - shadow-xl (drop shadow)
+// - border (standard 1px border)
+```
+
+**Implementation Rules**:
+1. **All hovercards MUST extend BaseHovercard** - No direct HoverCard component usage
+2. **Size must be specified via size prop** - No hardcoded width classes in contentClassName
+3. **Buttons must be from custom-ui-elements** - No shadcn Button usage
+4. **Badges must be from custom-ui-elements** - No shadcn Badge usage
+5. **Callbacks must follow naming conventions** - Consistent naming across all hovercards
+6. **Animation must use useAnimation() hook** - Same pattern as dialogs
+7. **Content must use bg-content** - Consistent background across all hovercards
+8. **No bg override in contentClassName** - Visual styling is standardized
+
+**Migration Checklist for Existing Hovercards**:
+- [ ] Remove hardcoded width classes (w-64, w-80, w-96) from contentClassName
+- [ ] Add size prop with appropriate value ('sm' | 'md' | 'lg')
+- [ ] Replace any Button imports with custom-ui-element buttons
+- [ ] Replace any Badge imports with BaseBadge
+- [ ] Add useAnimation() hook for consistent animations
+- [ ] Ensure all callbacks follow naming conventions
+- [ ] Remove any bg-* overrides from contentClassName
+- [ ] Apply bg-transparent to all buttons for proper visual hierarchy
+- [ ] Ensure border is standard (not border-2)
 
 ## Phase 1: Database-Focused Hovercard Architecture
 
@@ -90,7 +233,72 @@ Implement specialized hovercards that provide contextual database information, r
 - **Detailed Insights**: Expanded information beyond basic display
 - **Action Items**: Quick actions and next steps using ETL functions
 
-## Phase 2: Specialized Hovercard Components
+## Phase 2: Specialized Hovercard Components - Standardized Implementation
+
+### 2.0 Specialized Hovercard Pattern
+
+**All specialized hovercards MUST follow this pattern**:
+
+```typescript
+// 1. Import BaseHovercard and custom-ui-elements only
+import { BaseHovercard } from "./base-hovercard"
+import { PrimaryButton, SecondaryButton, TextButton } from "@/components/ui/custom-ui-elements/buttons"
+import { BaseBadge } from "@/components/ui/custom-ui-elements/badges"
+
+// 2. Define props with standardized callback names
+interface SpecializedHovercardProps {
+  children: React.ReactNode
+  // Domain-specific data props
+  data?: SomeDataType
+  // Standardized callbacks (use: onAction, onNavigate, onShowMore, onShowAll)
+  onAction?: () => void
+  onNavigate?: () => void
+  // Standard BaseHovercard overrides
+  size?: 'sm' | 'md' | 'lg'     // Default based on content complexity
+  delay?: number                // Override default 700ms if needed
+}
+
+// 3. Build content internally as React.ReactNode
+export function SpecializedHovercard({ 
+  children, 
+  data,
+  onAction,
+  onNavigate,
+  size = "md",  // Choose appropriate default
+  delay = 700 
+}: SpecializedHovercardProps) {
+  const content = (
+    <div className="space-y-3">
+      {/* Content structure using custom-ui-elements */}
+      <div>
+        <h4 className="text-sm font-semibold">Title</h4>
+        {/* Data display */}
+      </div>
+      
+      {/* Badges for status/state */}
+      <BaseBadge state="active" size="sm">Status</BaseBadge>
+      
+      {/* Actions using custom buttons with bg-transparent */}
+      {onAction && (
+        <TextButton size="sm" onClick={onAction} className="bg-transparent">
+          Action Text
+        </TextButton>
+      )}
+    </div>
+  )
+
+  // 4. Pass to BaseHovercard with appropriate configuration
+  return (
+    <BaseHovercard 
+      size={size}
+      openDelay={delay}
+      content={content}
+    >
+      {children}
+    </BaseHovercard>
+  )
+}
+```
 
 ### 2.1 ValueHovercard Component
 - **Value Information**: 
@@ -282,16 +490,75 @@ Implement specialized hovercards that provide contextual database information, r
 
 ## File Changes Required
 
-### Modified Files
-- `components/hovercards/value-hovercard.tsx` - Update to display database value details
-- `components/hovercards/progress-hovercard.tsx` - Update to show progress and status
-- `components/hovercards/mapping-hovercard.tsx` - Update to display mapping information
-- `components/hovercards/base-hovercard.tsx` - Enhance with database data capabilities
-- `components/hovercards/index.ts` - Ensure all existing hovercards are exported
+### New Files - Utility Infrastructure
+- `utils/hovercards/hovercard-utils.ts` - Size and positioning utilities (mirrors dialog-utils pattern)
+- `utils/hovercards/hovercard-types.ts` - TypeScript type definitions for hovercards
+- `utils/hovercards/index.ts` - Export utilities for easy importing
 
-### No New Files Required
-- All specialized hovercard components already exist
-- Focus on updating existing components with database integration
+### Modified Files - Core Infrastructure
+- `components/hovercards/base-hovercard.tsx` - **CRITICAL REFACTOR**:
+  - Add size system with getSizeClassName utility
+  - Add useAnimation() hook integration
+  - Remove hardcoded w-96 default width
+  - Add bg-content and shadow-xl to contentClassName
+  - Ensure border (not border-2)
+  - Add comprehensive TypeScript interface
+  - Remove contentClassName width overrides
+
+### Modified Files - Specialized Hovercards
+- `components/hovercards/value-hovercard.tsx` - **STANDARDIZE**:
+  - Replace Button with custom-ui-elements buttons
+  - Remove hardcoded widths
+  - Add size prop (default: 'md')
+  - Standardize callbacks: onNavigate instead of onExplore
+  - Add bg-transparent to buttons
+  
+- `components/hovercards/progress-hovercard.tsx` - **STANDARDIZE**:
+  - Remove hardcoded widths
+  - Add size prop (default: 'lg' for complex statistics)
+  - Keep onShowAll (matches convention)
+  - Add bg-transparent to TextButton
+  - Ensure BaseBadge usage is consistent
+  
+- `components/hovercards/mapping-hovercard.tsx` - **STANDARDIZE**:
+  - Remove w-64 hardcoded width
+  - Add size prop (default: 'sm')
+  - Rename onChooseMapping to onAction
+  - Add bg-transparent to buttons
+  - Ensure BaseBadge usage
+  
+- `components/hovercards/private-beta-hovercard.tsx` - **STANDARDIZE**:
+  - Remove w-80 hardcoded width
+  - Add size prop (default: 'md')
+  - Rename onJoinWaitlist to onAction
+  - Already uses TextButton (good)
+  - Add bg-transparent to button
+  
+- `components/hovercards/custom-hovercard-example.tsx` - **STANDARDIZE**:
+  - Remove w-64 hardcoded width
+  - Add size prop (default: 'sm')
+  - Example should demonstrate standardized pattern
+  
+- `components/hovercards/index.ts` - Update exports if needed
+
+### Implementation Priority
+
+**Phase 1 - Infrastructure** (Do First):
+1. Create `utils/hovercards/hovercard-types.ts`
+2. Create `utils/hovercards/hovercard-utils.ts`
+3. Create `utils/hovercards/index.ts`
+4. Update `components/hovercards/base-hovercard.tsx`
+
+**Phase 2 - Standardization** (Do Second):
+5. Update all specialized hovercards to use new BaseHovercard
+6. Ensure all custom-ui-elements imports are correct
+7. Remove all hardcoded widths
+8. Standardize all callback names
+
+**Phase 3 - Database Integration** (Do Last):
+9. Add database data integration to specialized hovercards
+10. Implement real-time updates
+11. Add loading states and error handling
 
 ## Testing Checklist
 
@@ -313,12 +580,75 @@ Implement specialized hovercards that provide contextual database information, r
 - [ ] Accessibility compliance for data display
 - [ ] Performance with many hovercards and live updates
 
+## Hovercard Size Recommendations
+
+### By Component Type
+- **BaseHovercard**: Default 'md' unless overridden
+- **ValueHovercard**: 'md' - Standard value display with metadata
+- **ProgressHovercard**: 'lg' - Complex statistics and multiple status items
+- **MappingHovercard**: 'sm' - Compact mapping configuration display
+- **PrivateBetaHovercard**: 'md' - Marketing message with CTA
+- **CustomHovercardExample**: 'sm' - Simple informational tooltip
+
+### Size Selection Guidelines
+- Use 'sm' (w-64) for:
+  - Simple tooltips and hints
+  - Status indicators
+  - Quick reference information
+  - Single-action hovercards
+  
+- Use 'md' (w-80) for:
+  - Standard information display
+  - Value details with metadata
+  - Configuration snippets
+  - 1-3 action buttons
+  
+- Use 'lg' (w-96) for:
+  - Complex statistics
+  - Multiple data sections
+  - Detailed insights
+  - 4+ action items
+  - Progress tracking with history
+
+## Comparison: Hovercards vs Dialogs
+
+### Similarities (Standardized Across Both)
+1. **Base component pattern** - Single source of truth
+2. **Size system** - sm/md/lg (hovercards) vs sm/md/lg/xl/full (dialogs)
+3. **Custom-ui-elements only** - No shadcn Button/Badge usage
+4. **Animation system** - Same useAnimation() hook
+5. **Visual styling** - bg-content, shadow-xl
+6. **Utility structure** - Separate utils folder with types and helpers
+7. **TypeScript interfaces** - Comprehensive prop definitions
+8. **Callback conventions** - Standardized naming patterns
+
+### Differences (Context-Appropriate)
+1. **Border thickness**: Hovercards use `border` (1px), dialogs use `border-2` (2px)
+2. **Size count**: Hovercards have 3 sizes, dialogs have 5 sizes
+3. **Close behavior**: Hovercards close on scroll/movement, dialogs have preventClose system
+4. **Timing**: Hovercards have openDelay/closeDelay, dialogs don't need delays
+5. **Positioning**: Hovercards have side/align/followCursor, dialogs are always centered
+6. **Backdrop**: Dialogs have bg-muted/30 backdrop, hovercards don't
+7. **Footer buttons**: Dialogs always have confirm/cancel, hovercards use contextual actions
+8. **Button styling**: Hovercard buttons need bg-transparent, dialog buttons don't
+
+### Why These Differences Matter
+- **Hovercards** are lightweight, contextual, and non-blocking
+- **Dialogs** are prominent, modal, and require user decision
+- Both follow the same architectural principles but serve different UX purposes
+- Standardization ensures consistency within each category while allowing category-specific optimizations
+
 ## Success Criteria
 
-1. **Contextual Information**: Relevant and helpful information on hover from database
-2. **JSON Integration**: Effective display of JSON templates and configurations
-3. **User Experience**: Smooth and intuitive hover interactions
-4. **Performance**: Fast loading and real-time updates
-5. **Accessibility**: Full WCAG 2.1 AA compliance
-6. **Responsiveness**: Seamless experience across all device sizes
-7. **Data Integration**: Seamless database data display and interaction
+1. **Standardization Compliance**: 100% adherence to size system, button usage, and callback naming conventions
+2. **Visual Consistency**: All hovercards use bg-content, shadow-xl, border, and custom-ui-elements
+3. **Animation Uniformity**: All hovercards use useAnimation() hook with same timing/easing as dialogs
+4. **Type Safety**: Comprehensive TypeScript interfaces with proper defaults documented
+5. **Contextual Information**: Relevant and helpful information on hover from database
+6. **JSON Integration**: Effective display of JSON templates and configurations
+7. **User Experience**: Smooth and intuitive hover interactions
+8. **Performance**: Fast loading and real-time updates
+9. **Accessibility**: Full WCAG 2.1 AA compliance
+10. **Responsiveness**: Seamless experience across all device sizes
+11. **Data Integration**: Seamless database data display and interaction
+12. **Migration Complete**: All existing hovercards follow standardized pattern with no legacy code
