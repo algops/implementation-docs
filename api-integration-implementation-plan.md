@@ -232,7 +232,7 @@ Migrate the entire UI from static JSON file-based data loading to Supabase's aut
 - `components/forms/dynamic-form.tsx` - Dynamic form builder
 - `components/forms/inference-form.tsx` - API inference forms
 - `components/forms/status-check-form.tsx` - Status checking
-- `components/forms/blocks/auto-save-form.tsx` - Auto-save functionality
+- `hooks/use-auto-save.ts` - Auto-save functionality
 
 **Form Features to Implement:**
 - Auto-save: Periodic saving to database

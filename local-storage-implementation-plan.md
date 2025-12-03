@@ -36,7 +36,7 @@
 ### **3. Form Auto-Save System**
 
 **Current Implementation:**
-- **Auto-Save Hook**: `useAutoSave()` hook in `auto-save-form.tsx`
+- **Auto-Save Hook**: `useAutoSave()` hook in `hooks/use-auto-save.ts`
 - **Interval-Based Saving**: Configurable save intervals (default 5 seconds)
 - **Form-Specific Keys**: Uses `form_${formId}` pattern for unique form identification
 - **BeforeUnload Protection**: Saves data when user leaves page
@@ -137,7 +137,7 @@
 
 **Current Form Components:**
 - **Main Forms**: `customization-form.tsx`, `delivery-form.tsx`, `inference-form.tsx`, `settings-form.tsx`, `status-check-form.tsx`
-- **Form Blocks**: `auto-save-form.tsx`, `dynamic-form.tsx`, `form-drag-drop.tsx`, `form-field.tsx`, `form-section.tsx`
+- **Form Blocks**: `dynamic-form.tsx`, `form-drag-drop.tsx`, `form-field.tsx`, `form-section.tsx`
 - **Specialized Forms**: `load-balancing-form.tsx`, `multi-field-form.tsx`, `request-header-form.tsx`, `simple-form.tsx`
 
 **Auto-Save Implementation:**
@@ -568,7 +568,7 @@ When multiple RequestMetadataForm instances exist on the same page (for example,
 **Pattern One - LocalStorageManager (Preferred)**:
 - Location: utils/local-storage.ts
 - Features: Prefix system with `algops_`, error handling, type safety, timestamp tracking, version support
-- Current Usage: auto-save-form.tsx uses `storage.setItem()`
+- Current Usage: hooks/use-auto-save.ts uses `storage.setItem()`
 - Characteristics: Singleton pattern, comprehensive error handling, SSR-safe checks
 - Problem: Only forty percent adoption across codebase
 
@@ -585,7 +585,7 @@ When multiple RequestMetadataForm instances exist on the same page (for example,
 - Missing: All benefits of LocalStorageManager
 
 **Pattern Four - Mixed Approach**:
-- Location: auto-save-form.tsx
+- Location: hooks/use-auto-save.ts
 - Uses LocalStorageManager but implements custom key pattern `form_${formId}`
 - Problem: No tab isolation, conflicts across browser tabs
 
@@ -743,7 +743,7 @@ Check if non-scoped key exists, if yes, read the data, write to tab-scoped key, 
 
 ### **4. Auto-Save Hook Tab Isolation Integration**
 
-**File Location**: `/components/forms/blocks/auto-save-form.tsx`
+**File Location**: `/hooks/use-auto-save.ts`
 
 **Enable Tab-Scoped Storage:**
 
